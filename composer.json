@@ -1,6 +1,6 @@
 {
     "name": "pixelbrackets/patchbot",
-    "description": "Automate the distribution of patches to various repositories",
+    "description": "Automate the distribution of patches to various Git repositories",
     "type": "library",
     "license": "GPL-2.0-or-later",
     "require": {
