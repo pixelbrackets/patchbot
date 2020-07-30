@@ -1,0 +1,7 @@
+Summary of the changes in 50 characters or less
+
+Explain the problem that this commit is solving. Written in imperative mood.
+That means that it must be written as if you are giving a command
+or an instruction, since a commit is a set of instructions for how to go
+from a previous state to the new state.
+The commit message should describe this process.
