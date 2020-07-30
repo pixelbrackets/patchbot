@@ -1,0 +1,6 @@
+{
+    "name": "pixelbrackets/patchbot",
+    "description": "Automate the distribution of patches to various repositories",
+    "type": "library",
+    "license": "GPL-2.0-or-later"
+}
