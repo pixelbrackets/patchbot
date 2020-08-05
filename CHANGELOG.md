@@ -1,5 +1,6 @@
 # Changelog
 
-2020-07-30 Dan Untenzu <mail@pixelbrackets.de>
+2020-08-05 Dan Untenzu <mail@pixelbrackets.de>
 
-  * WIP
+  * 1.0.0
+  * Initial release

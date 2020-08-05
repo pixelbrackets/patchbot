@@ -1,9 +1,10 @@
 # Patchbot
 
-[![Version](https://img.shields.io/badge/version-wip-blue.svg?style=flat-square)](https://packagist.org/packages/pixelbrackets/patchbot/)
+[![Version](https://img.shields.io/packagist/v/pixelbrackets/patchbot.svg?style=flat-square)](https://packagist.org/packages/pixelbrackets/patchbot/)
 [![Build Status](https://img.shields.io/gitlab/pipeline/pixelbrackets/patchbot?style=flat-square)](https://gitlab.com/pixelbrackets/patchbot/pipelines)
 [![Made With](https://img.shields.io/badge/made_with-php-blue?style=flat-square)](https://gitlab.com/pixelbrackets/patchbot#requirements)
 [![License](https://img.shields.io/badge/license-gpl--2.0--or--later-blue.svg?style=flat-square)](https://spdx.org/licenses/GPL-2.0-or-later.html)
+[![Contribution](https://img.shields.io/badge/contributions_welcome-%F0%9F%94%B0-brightgreen.svg?labelColor=brightgreen&style=flat-square)](https://gitlab.com/pixelbrackets/patchbot/-/blob/master/CONTRIBUTING.md)
 
 A tool to automate the distribution of patches to various Git repositories.
 
@@ -34,7 +35,11 @@ Saving time and preventing dry work.
 
 ## Installation
 
-Packagist Entry *WIP - No package yet*
+Packagist Entry https://packagist.org/packages/pixelbrackets/patchbot/
+
+💡 Or use the 
+[skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/)
+to create an example project right away.
 
 ## Source
 
