@@ -1,0 +1,10 @@
+~ $ ./vendor/bin/patchbot patch --patch-name=my-patch --repository-url=https://git.example.com/example-repository
+
+➜  Switch to working directory /tmp/tmp_tX2N9S7J34xA
+➜  Clone repository
+➜  Use repository in /tmp/tmp_tX2N9S7J34xA/example-repository
+➜  Create new branch 20200805_patchbot_5f3512a7500a1
+➜  Run patch script
+➜  Commit changes
+➜  Push branch
+➜  Create PR manually
