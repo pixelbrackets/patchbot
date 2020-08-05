@@ -1,24 +1,31 @@
 <?php
+
+namespace Pixelbrackets\Patchbot;
+
 /**
  * Patchbot tasks (based on Robo)
  *
- *   ./vendor/bin/robo patch
+ *   ./vendor/bin/patchbot patch
  *
  */
 class RoboFile extends \Robo\Tasks
 {
+    protected $initialWorkingDirectory = null;
+
     /**
      * Apply changes, commit changes, push
      *
      * @param array $options
      * @option $repository-url HTTPS URL of Git repository
      * @option $working-directory Working directory to checkout repositories
+     * @option $patch-source-directory Source directory for all collected patches
      * @option $patch-name Name of the directory where the patch code resides
      * @throws \Robo\Exception\TaskException
      */
     public function patch(array $options = [
         'repository-url|g' => null,
         'working-directory|d' => null,
+        'patch-source-directory|s' => null,
         'patch-name|p' => 'template'
     ])
     {
@@ -28,6 +35,7 @@ class RoboFile extends \Robo\Tasks
         }
 
         // Set working directory
+        $patchSourceDirectory = ($options['patch-source-directory'] ?? getcwd() . '/patches/') . '/';
         $workingDirectory = $options['working-directory'] ?? $this->_tmpDir();
         $this->say('Switch to working directory ' . $workingDirectory);
         chdir($workingDirectory);
@@ -58,7 +66,7 @@ class RoboFile extends \Robo\Tasks
         // Patch!
         $this->say('Run patch script');
         try {
-            $patchFile = __DIR__ . '/patches/' . $options['patch-name'] . '/patch.php';
+            $patchFile = $patchSourceDirectory . $options['patch-name'] . '/patch.php';
             require_once($patchFile);
         } catch (Exception $e) {
             throw new \Robo\Exception\TaskException($this, 'Patch script execution failed');
@@ -71,7 +79,7 @@ class RoboFile extends \Robo\Tasks
             $this->say('Nothing to commit, no changes in repository');
             return;
         }
-        $commitMessage = file_get_contents(__DIR__ . '/patches/' . $options['patch-name'] . '/commit-message.txt');
+        $commitMessage = file_get_contents($patchSourceDirectory . $options['patch-name'] . '/commit-message.txt');
         $this->taskGitStack()
             ->add('-A')
             ->commit($commitMessage)

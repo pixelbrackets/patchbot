@@ -34,9 +34,7 @@ Saving time and preventing dry work.
 
 ## Installation
 
-*WIP* - No package yet
-
-Clone this repository until a package is available.
+Packagist Entry *WIP - No package yet*
 
 ## Source
 
@@ -44,20 +42,47 @@ https://gitlab.com/pixelbrackets/patchbot/
 
 ## Usage
 
-- Copy the patch template folder `./patches/template/` and rename it as desired,
-  but stay in the same directory level
+Patchbot applies a script in a “patch directory” to a given Git repository.
+
+The patch directory contains a PHP script named `patch.php` and a 
+commit message named `commitmessage.txt`. The relative directory `patches`
+contains a collection of all patch directories.
+
+Pass the directory name as `patch-name` and the Git repository as
+`repository-url` to the `patchbot` script.
+
+Example file structure:
+```
+.
+|-- patches
+|   |-- template
+|   |   |-- commit-message.txt
+|   |   `-- patch.php
+|   `-- yet-another-patch
+|       |-- commit-message.txt
+|       `-- patch.php
+|-- vendor
+|   `-- bin
+|       `-- patchbot
+|-- composer.json
+`-- README.md
+```
+
+Example command applying the patch script in directory `template` to
+the repository `https://git.example.com/repository`:
+```bash
+./vendor/bin/patchbot patch --patch-name=template --repository-url=https://git.example.com/repository
+```
+
+**Add a new patch**
+
+- Copy the patch template folder `template` and rename it as desired
 - Replace the commit message in `commitmessage.txt`
 - Replace the patch code in `patch.php`
 - The patch code will be executed in the root directory of the target
   repository, keep this in mind for file searches
 - 💡 Tip: Develop the patch file in a test repository and then move it back
-  to this repository
-- Run the script, passing the name of the patch directory and the URL of the
-  target repository
-
-```bash
-./vendor/bin/robo patch --patch-name=template --repository-url=https://gitexample.com/git/example
-```
+  to your patch collection
 
 ## License
 
