@@ -54,7 +54,7 @@ https://gitlab.com/pixelbrackets/patchbot/
 Patchbot applies a script in a “patch directory” to a given Git repository.
 
 The patch directory contains a PHP script named `patch.php` and a 
-commit message named `commitmessage.txt`. The relative directory `patches`
+commit message named `commit-message.txt`. The relative directory `patches`
 contains a collection of all patch directories.
 
 Pass the directory name as `patch-name` and the Git repository as
@@ -86,7 +86,7 @@ the repository `https://git.example.com/repository`:
 **Add a new patch**
 
 - Copy the patch template folder `template` and rename it as desired
-- Replace the commit message in `commitmessage.txt`
+- Replace the commit message in `commit-message.txt`
 - Replace the patch code in `patch.php`
 - The patch code will be executed in the root directory of the target
   repository, keep this in mind for file searches
