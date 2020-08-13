@@ -87,7 +87,7 @@ class RoboFile extends \Robo\Tasks
             ->run();
 
         // Push branch
-        //$this->say('Push branch');
+        $this->say('Push branch');
         $this->taskGitStack()
             ->push('origin', $patchBranch)
             ->silent(true)
@@ -97,7 +97,7 @@ class RoboFile extends \Robo\Tasks
         // GitLab: `push` with push options https://docs.gitlab.com/ee/user/project/push_options.html#push-options-for-merge-requests & https://gitlab.com/gitlab-org/gitlab-foss/-/merge_requests/26752
         // GitHub: `request-pull` and manual work https://hackernoon.com/how-to-git-pr-from-the-command-line-a5b204a57ab1
         // Other: Show link to origin and ask to open it in a browser? (silent = false)
-        $this->say('Create PR');
+        $this->say('Create PR manually');
         $this->taskOpenBrowser($options['repository-url'])->run();
     }
 }
