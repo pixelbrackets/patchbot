@@ -13,7 +13,7 @@ class RoboFile extends \Robo\Tasks
     protected $initialWorkingDirectory = null;
 
     /**
-     * Apply changes, commit changes, push
+     * Apply changes, commit, push
      *
      * @param array $options
      * @option $repository-url HTTPS URL of Git repository
@@ -103,5 +103,78 @@ class RoboFile extends \Robo\Tasks
         // Other: Show link to origin and ask to open it in a browser? (silent = false)
         $this->say('Create PR manually');
         $this->taskOpenBrowser($options['repository-url'])->run();
+    }
+
+    /**
+     * Merge one branch into another, push
+     *
+     * @param array $options
+     * @option $repository-url HTTPS URL of Git repository
+     * @option $working-directory Working directory to checkout repositories
+     * @option $source Source branch name
+     * @option $target Target branch name
+     * @throws \Robo\Exception\TaskException
+     */
+    public function merge(array $options = [
+        'repository-url|g' => null,
+        'working-directory|d' => null,
+        'source|s' => null,
+        'target|t' => null
+    ])
+    {
+        if (
+            empty($options['repository-url']) ||
+            empty($options['source']) ||
+            empty($options['target'])
+        ) {
+            $this->say('Missing arguments');
+            return;
+        }
+
+        // Set working directory
+        $workingDirectory = $options['working-directory'] ?? $this->_tmpDir();
+        $this->say('Switch to working directory ' . $workingDirectory);
+        chdir($workingDirectory);
+
+        // Clone repo or use existing repository
+        $repositoryName = basename($options['repository-url']);
+        if (false === is_dir($repositoryName)) {
+            $this->say('Clone repository');
+            $this->taskGitStack()
+                ->cloneRepo($options['repository-url'], $repositoryName)
+                ->silent(true)
+                ->run();
+        }
+        chdir($repositoryName);
+        $currentDirectory = getcwd();
+        $this->say('Use repository in ' . $currentDirectory);
+
+        // Fetch branches
+        $this->say('Fetch branch ' . $options['source']);
+        $this->taskGitStack()
+            ->checkout($options['source'])
+            ->pull()
+            ->silent(true)
+            ->run();
+        $this->say('Fetch branch ' . $options['target']);
+        $this->taskGitStack()
+            ->checkout($options['target'])
+            ->pull()
+            ->silent(true)
+            ->run();
+
+        // Merge!
+        $this->say('Merge branches');
+        $this->taskGitStack()
+            ->merge($options['source'])
+            ->silent(true)
+            ->run();
+
+        // Push branch
+        $this->say('Push branch');
+        $this->taskGitStack()
+            ->push('origin', $options['target'])
+            ->silent(true)
+            ->run();
     }
 }

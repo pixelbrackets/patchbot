@@ -26,11 +26,11 @@ repositories:
   [Git patch file](https://git-scm.com/docs/git-format-patch/2.7.6) could solve,
   but something that could be automated nevertheless.
 - Create a feature branch, commit all changes with a good commit message,
-  push the branch, open a pull request.
+  push the branch, wait for tests to turn green, open a pull request.
 - Repeat the same steps in many other repositories.
 
 The idea is to do the changes only once and move the repetitions to a tool.
-Saving time and preventing dry work.
+Saving time, preventing careless mistakes and shun monotonous work.
 
 ## Requirements
 
@@ -48,6 +48,8 @@ to create an example project right away.
 ## Source
 
 https://gitlab.com/pixelbrackets/patchbot/
+
+Mirror https://github.com/pixelbrackets/patchbot/
 
 ## Usage
 
@@ -88,15 +90,24 @@ the repository `https://git.example.com/repository`:
 ./vendor/bin/patchbot patch --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
-Example command to apply the patch based on a different branch:
+Example command to create the feature branch based on the branch `development`
+instead of the main branch:
 ```bash
 ./vendor/bin/patchbot patch --source-branch=development --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
-Example command to use a custom name for the feature branch to be created 
-instead of a random name:
+Example command to use the custom name `feature-1337-add-license-file` for 
+the feature branch instead of a random name:
 ```bash
 ./vendor/bin/patchbot patch --branch-name=feature-1337-add-license-file --patch-name=template --repository-url=https://git.example.com/repository
+```
+
+When you reviewed the feature branch and all tests are successful then
+you can use Patchbot again to merge the branch.
+
+Example command to merge branch `bugfix-add-missing-lock-file` into branch `main`:
+```bash
+./vendor/bin/patchbot merge source=bugfix-add-missing-lock-file --target=main --repository-url=https://git.example.com/repository
 ```
 
 **Add a new patch**
