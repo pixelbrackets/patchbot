@@ -93,6 +93,12 @@ Example command to apply the patch based on a different branch:
 ./vendor/bin/patchbot patch --source-branch=development --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
+Example command to use a custom name for the feature branch to be created 
+instead of a random name:
+```bash
+./vendor/bin/patchbot patch --branch-name=feature-1337-add-license-file --patch-name=template --repository-url=https://git.example.com/repository
+```
+
 **Add a new patch**
 
 - Copy the patch template folder `template` and rename it as desired
