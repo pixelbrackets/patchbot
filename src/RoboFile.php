@@ -20,13 +20,15 @@ class RoboFile extends \Robo\Tasks
      * @option $working-directory Working directory to checkout repositories
      * @option $patch-source-directory Source directory for all collected patches
      * @option $patch-name Name of the directory where the patch code resides
+     * @option $source-branch Name of the branch to create a new branch upon
      * @throws \Robo\Exception\TaskException
      */
     public function patch(array $options = [
         'repository-url|g' => null,
         'working-directory|d' => null,
         'patch-source-directory|s' => null,
-        'patch-name|p' => 'template'
+        'patch-name|p' => 'template',
+        'source-branch' => 'master', // rename to main in next mayor release
     ])
     {
         if (empty($options['repository-url'])) {
@@ -57,7 +59,7 @@ class RoboFile extends \Robo\Tasks
         $patchBranch = date('Ymd') . '_' . 'patchbot_' . uniqid();
         $this->say('Create new branch ' . $patchBranch);
         $this->taskGitStack()
-            ->checkout('master')
+            ->checkout($options['source-branch'])
             ->pull()
             ->checkout('-b ' . $patchBranch)
             ->silent(true)

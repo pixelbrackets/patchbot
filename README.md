@@ -53,11 +53,16 @@ https://gitlab.com/pixelbrackets/patchbot/
 
 Patchbot applies a script in a “patch directory” to a given Git repository.
 
-The patch directory contains a PHP script named `patch.php` and a 
-commit message named `commit-message.txt`. The relative directory `patches`
-contains a collection of all patch directories.
+This means it will clone the repository, create a feature branch,
+run a given PHP patch script, commit the changes and push the branch.
 
-Pass the directory name as `patch-name` and the Git repository as
+The user running Patchbot needs to have access to the target repository.
+
+The patch directory always contains a PHP script named `patch.php` and a 
+commit message named `commit-message.txt`. The parent directory `patches`
+contains a collection of patch directories.
+
+Pass the name of the patch directory as `patch-name` and the Git repository as
 `repository-url` to the `patchbot` script.
 
 Example file structure:
@@ -81,6 +86,11 @@ Example command applying the patch script in directory `template` to
 the repository `https://git.example.com/repository`:
 ```bash
 ./vendor/bin/patchbot patch --patch-name=template --repository-url=https://git.example.com/repository
+```
+
+Example command to apply the patch based on a different branch:
+```bash
+./vendor/bin/patchbot patch --source-branch=development --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
 **Add a new patch**
