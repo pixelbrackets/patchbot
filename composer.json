@@ -4,7 +4,8 @@
     "type": "library",
     "license": "GPL-2.0-or-later",
     "require": {
-        "consolidation/robo": "^2.1"
+        "consolidation/robo": "^2.1",
+        "jean85/pretty-package-versions": "^1.5"
     },
     "autoload": {
         "psr-4": {
