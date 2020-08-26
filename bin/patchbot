@@ -18,6 +18,8 @@ if (!$loaded) {
     );
 }
 
+$version = \Jean85\PrettyVersions::getVersion('pixelbrackets/patchbot')->getPrettyVersion();
+
 $runner = new \Robo\Runner(\Pixelbrackets\Patchbot\RoboFile::class);
-$statusCode = $runner->execute($argv);
+$statusCode = $runner->execute($argv, 'Patchbot', $version);
 exit($statusCode);
