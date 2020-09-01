@@ -1,5 +1,10 @@
 # Changelog
 
+2020-09-01 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.2.0
+  * FEATURE Add merge task
+
 2020-08-26 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.1.0
