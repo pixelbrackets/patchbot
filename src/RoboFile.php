@@ -71,7 +71,8 @@ class RoboFile extends \Robo\Tasks
         $this->say('Run patch script');
         try {
             $patchFile = $patchSourceDirectory . $options['patch-name'] . '/patch.php';
-            require_once($patchFile);
+            $output = shell_exec('php ' . escapeshellcmd($patchFile));
+            echo $output;
         } catch (Exception $e) {
             throw new \Robo\Exception\TaskException($this, 'Patch script execution failed');
         }
