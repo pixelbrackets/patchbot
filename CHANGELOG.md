@@ -1,5 +1,11 @@
 # Changelog
 
+2020-09-08 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.3.0
+  * FEATURE Patch Task: Isolate patch file execution
+  * FEATURE Docs: Extend usage guide examples
+
 2020-09-01 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.2.0
