@@ -32,6 +32,11 @@ of my repositories:
 The idea is to do the changes only once and move the repetitions to a tool.
 Saving time, preventing careless mistakes and shun monotonous work.
 
+📝 Take a look at this
+[blog post with real world examples](https://pixelbrackets.de/notes/distribute-patches-to-many-git-repositories-with-patchbot)
+and how Patchbot helps to reduce technical debt across your own Git
+repositories.
+
 ## Requirements
 
 - PHP
