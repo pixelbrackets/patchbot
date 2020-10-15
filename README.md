@@ -116,9 +116,9 @@ When you reviewed the feature branch and all tests are successful then
 you can use Patchbot again to merge the branch.
 
 Example command to merge branch `bugfix-add-missing-lock-file` into
-branch `main`:
+branch `main` in repository `https://git.example.com/repository`:
 ```bash
-./vendor/bin/patchbot merge source=bugfix-add-missing-lock-file --target=main --repository-url=https://git.example.com/repository
+./vendor/bin/patchbot merge --source=bugfix-add-missing-lock-file --target=main --repository-url=https://git.example.com/repository
 ```
 
 ### Add a new patch
