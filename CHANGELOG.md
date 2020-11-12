@@ -1,5 +1,11 @@
 # Changelog
 
+2020-11-12 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.4.0
+  * FEATURE Force remote branch usage in checkout
+  * BUGFIX Docs: Fix merge argument
+
 2020-09-08 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.3.0
