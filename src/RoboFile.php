@@ -153,13 +153,13 @@ class RoboFile extends \Robo\Tasks
         // Fetch branches
         $this->say('Fetch branch ' . $options['source']);
         $this->taskGitStack()
-            ->checkout($options['source'])
+            ->checkout($options['source'] . ' --')
             ->pull()
             ->silent(true)
             ->run();
         $this->say('Fetch branch ' . $options['target']);
         $this->taskGitStack()
-            ->checkout($options['target'])
+            ->checkout($options['target'] . ' --')
             ->pull()
             ->silent(true)
             ->run();
