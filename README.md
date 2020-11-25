@@ -12,7 +12,9 @@ A tool to automate the distribution of patches to various Git repositories.
 
 ![Screenshot](docs/screenshot.png)
 
-## Idea
+_⭐ You like this package? Please star it or send a tweet. ⭐_
+
+## Vision
 
 This project provides a tool to distribute changes to a several Git repositories
 with as little manual work as possible.
@@ -37,6 +39,10 @@ Saving time, preventing careless mistakes and shun monotonous work.
 and how Patchbot helps to reduce technical debt across your own Git
 repositories.
 
+See [»Usage«](#usage) for example commands.
+
+The package follows the KISS principle.
+
 ## Requirements
 
 - PHP
@@ -46,9 +52,13 @@ repositories.
 
 Packagist Entry https://packagist.org/packages/pixelbrackets/patchbot/
 
+- `composer require pixelbrackets/patchbot`
+
 💡 Or use the 
 [skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/)
 to create an example project right away.
+
+- `composer create-project pixelbrackets/patchbot-skeleton`
 
 ## Source
 
@@ -91,6 +101,8 @@ Example file structure:
 `-- README.md
 ```
 
+### Apply patch
+
 Pass the name of the patch directory as `patch-name` and the Git repository as
 `repository-url` to the `patchbot` script.
 
@@ -112,8 +124,10 @@ the feature branch instead of a random name:
 ./vendor/bin/patchbot patch --branch-name=feature-1337-add-license-file --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
+### Merge feature branch
+
 When you reviewed the feature branch and all tests are successful then
-you can use Patchbot again to merge the branch.
+you can use Patchbot again to merge the feature branch.
 
 Example command to merge branch `bugfix-add-missing-lock-file` into
 branch `main` in repository `https://git.example.com/repository`:
@@ -174,12 +188,16 @@ The GNU General Public License can be found at http://www.gnu.org/copyleft/gpl.h
 
 Dan Untenzu (<mail@pixelbrackets.de> / [@pixelbrackets](https://pixelbrackets.de))
 
-## Changelog
 
-See [./CHANGELOG.md](CHANGELOG.md)
+See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Contribution
 
-This script is Open Source, so please use, patch, extend or fork it.
+This script is Open Source, so please use, share, patch, extend or fork it.
 
-[Contributions](CONTRIBUTING.md) are welcome!
+[Contributions](./CONTRIBUTING.md) are welcome!
+
+## Feedback
+
+Please send some [feedback](https://pixelbrackets.de/) and share how this
+package has proven useful to you or how you may help to improve it.
