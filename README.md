@@ -170,8 +170,10 @@ Example command using the CLI gem [gist](https://github.com/defunkt/gist)
 to upload the `template` patch:
 ```bash
 cd patches/template/
-gist -d "template" patch.php commit-message.txt
+gist -d "Patchbot Patch »template« - Just a template without changes" patch.php commit-message.txt
 ```
+
+🔎 Search for [Gists with Patchbot tags](https://gist.github.com/search?l=PHP&q=%23patchbot).
 
 ### Import a patch
 
@@ -179,10 +181,11 @@ Copy & paste all files manually to import an existing patch from another source.
 
 If the source is a Git repository then a Git clone command is sufficient.
 
-Example command importing the Gist `https://gist.github.com/Ohw7eesu` as
+Example command importing the Gist
+`https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745` as
 patch `add-editorconfig`:
 ```bash
-git clone --depth=1 https://gist.github.com/Ohw7eesu patches/add-editorconfig/
+git clone --depth=1 https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745 patches/add-editorconfig/
 rm -r patches/add-editorconfig/.git
 ```
 
