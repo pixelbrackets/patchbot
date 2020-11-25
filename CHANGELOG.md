@@ -1,5 +1,10 @@
 # Changelog
 
+2020-11-25 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.5.0
+  * FEATURE Add option to halt before commit
+
 2020-11-12 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.4.0
