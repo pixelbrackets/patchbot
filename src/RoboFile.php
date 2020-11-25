@@ -22,6 +22,7 @@ class RoboFile extends \Robo\Tasks
      * @option $patch-name Name of the directory where the patch code resides
      * @option $source-branch Name of the branch to create a new branch upon
      * @option $branch-name Name of the feature branch to be created
+     * @option $halt-before-commit Pause before changes are commited, asks to continue
      * @throws \Robo\Exception\TaskException
      */
     public function patch(array $options = [
@@ -31,6 +32,7 @@ class RoboFile extends \Robo\Tasks
         'patch-name|p' => 'template',
         'source-branch' => 'master', // rename to main in next mayor release
         'branch-name' => null,
+        'halt-before-commit' => false,
     ])
     {
         if (empty($options['repository-url'])) {
@@ -78,12 +80,27 @@ class RoboFile extends \Robo\Tasks
         }
         chdir($currentDirectory);
 
-        // Commit changes
+        // Check for changes
         $this->say('Commit changes');
-        if (empty(exec('git status -s'))) {
+        $fileChanges = exec('git status -s');
+        if (empty($fileChanges)) {
             $this->say('Nothing to commit, no changes in repository');
             return;
         }
+
+        // Halt for manual review before commit
+        if ($options['halt-before-commit']) {
+            $this->say('Halt for manual review');
+            $this->say('Working directory: ' . PHP_EOL . $currentDirectory);
+            $this->say('File changes: ' . PHP_EOL . $fileChanges);
+            $question = $this->io()->confirm('Continue?', true);
+            if ($question === false) {
+                return;
+            }
+        }
+
+        // Commit changes
+        $this->say('Commit changes');
         $commitMessage = file_get_contents($patchSourceDirectory . $options['patch-name'] . '/commit-message.txt');
         $this->taskGitStack()
             ->add('-A')

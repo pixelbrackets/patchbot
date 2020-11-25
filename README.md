@@ -124,6 +124,14 @@ the feature branch instead of a random name:
 ./vendor/bin/patchbot patch --branch-name=feature-1337-add-license-file --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
+It is recommend to let a CI run all tests, that's why Patchbot creates a feature
+branch by default. If you want to review changes manually before the commit,
+then use the `halt-before-commit` option:
+
+```bash
+./vendor/bin/patchbot patch --halt-before-commit --patch-name=template --repository-url=https://git.example.com/repository
+```
+
 ### Merge feature branch
 
 When you reviewed the feature branch and all tests are successful then
