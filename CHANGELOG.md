@@ -1,5 +1,11 @@
 # Changelog
 
+2020-12-16 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.6.0
+  * FEATURE Abort when git clone not possible
+  * FEATURE Add minimal test file
+
 2020-11-25 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.5.0
