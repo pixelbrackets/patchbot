@@ -12,6 +12,14 @@
             "Pixelbrackets\\Patchbot\\": "src/"
         }
     },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0"
+    },
+    "scripts": {
+        "test": [
+            "phpunit tests/unit/"
+        ]
+    },
     "bin": [
         "bin/patchbot"
     ]
