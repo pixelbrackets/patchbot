@@ -50,10 +50,14 @@ class RoboFile extends \Robo\Tasks
         $repositoryName = basename($options['repository-url']);
         if (false === is_dir($repositoryName)) {
             $this->say('Clone repository');
-            $this->taskGitStack()
+            $gitClone = $this->taskGitStack()
                 ->cloneRepo($options['repository-url'], $repositoryName)
                 ->silent(true)
                 ->run();
+
+            if ($gitClone->wasSuccessful() !== true) {
+                throw new \Robo\Exception\TaskException($this, 'Cloning failed');
+            }
         }
         chdir($repositoryName);
         $currentDirectory = getcwd();
