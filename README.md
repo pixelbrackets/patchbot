@@ -63,33 +63,37 @@ https://packagist.org/packages/pixelbrackets/patchbot/
 
 ### Access rights
 
-🔑 The user running Patchbot needs to have access to the target repository.
+🔑 *The user running Patchbot needs to have access to the target repository.*
 
-Patchbot currently uses HTTPS instead of SSH transport for connections
-to remotes.
+Make sure that the user running Patchbot is allowed to clone and push to
+all target repositories.
 
-Git by default does not store any credentials. *Every connection* to a
+Patchbot allows all protocols for connections to remotes which are supported
+by Git natively:
+[FILE, HTTP/HTTPS, SSH](https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols)
+
+#### HTTPS Credentials
+
+Git by default does not store any credentials. So *every connection* to a
 repository by HTTPS will prompt for a username and password.
 
-To avoid these password prompts you have three options
+To avoid these password prompts when using HTTPS URIs with Patchbot
+you have two options:
 
 - Allow Git to store credentials in memory for some time
+  - The password prompt then pops up once only for each host
   - Example command to keep the credentials in memory for 15 minutes:
     ```bash
     git config --global credential.helper 'cache --timeout=900'
     ```
 - Force Git to use SSH checkouts instead of HTTP/HTTPS
-  - Has to be configured for each host, example for GitHub & GitLab
+  - Has to be configured for each host
+  - Example commands to set up the replacements for GitHub, GitLab & BitBucket
     ```bash
-    [url "ssh://git@github.com/"]
-    insteadOf = https://github.com/
-    [url "ssh://git@gitlab.com/"]
-    insteadOf = https://gitlab.com/
+    git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
+    git config --global url."ssh://git@gitlab.com/".insteadOf "https://gitlab.com/"
+    git config --global url."ssh://git@bitbucket.org/".insteadOf "https://bitbucket.org/"
     ```
-- Setup SSH key connections and pass a SSH URI instead to HTTPS
-  - Use `git@gitlab.com:user/project.git` as repository URL
-    instead of `https://gitlab.com/user/project` in the [patch command](#patch)
-  - ⚠️ Some features do not work with SSH URIs yet
 
 ## Source
 
@@ -144,6 +148,12 @@ the repository `https://git.example.com/repository`:
 ./vendor/bin/patchbot patch --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
+Example command applying the patch script in directory `template` to
+the repository `ssh://git@git.example.com/repository.git`:
+```bash
+./vendor/bin/patchbot patch --patch-name=template --repository-url=ssh://git@git.example.com/repository.git
+```
+
 Example command to create the feature branch based on the branch `development`
 instead of the default main branch:
 ```bash
@@ -156,9 +166,9 @@ the feature branch instead of a random name:
 ./vendor/bin/patchbot patch --branch-name=feature-1337-add-license-file --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
-It is recommend to let a CI run all tests, that's why Patchbot creates a feature
-branch by default. If you want to review changes manually before the commit,
-then use the `halt-before-commit` option:
+It is recommended to let a CI run all tests. That's why Patchbot creates a
+feature branch by default. If you want to review complex changes manually before
+the commit is created, then use the `halt-before-commit` option:
 
 ```bash
 ./vendor/bin/patchbot patch --halt-before-commit --patch-name=template --repository-url=https://git.example.com/repository
@@ -179,24 +189,26 @@ branch `main` in repository `https://git.example.com/repository`:
 
 ### Add a new patch
 
-- Example command to create a patch named `add-changelog-file` (the name is
-  used as directory name and therefore slugified automatically)
-  ```bash
-  ./vendor/bin/patchbot create --patch-name="Add CHANGELOG file"
-  ```
-  - Or copy the example folder `template` manually and rename it as desired
-- Replace the commit message in `commit-message.txt`
-- Replace the patch code in `patch.php`
+Example command to create a directory named `add-changelog-file` and
+all files needed for the patch (the name is slugified automatically):
+```bash
+./vendor/bin/patchbot create --patch-name="Add CHANGELOG file"
+```
+Or copy the example folder `template` manually instead and rename it as desired.
 
+Now replace the patch code in `patch.php` and the commit message
+in `commit-message.txt`.
 
-- 🛡 ️Patchbot runs the patch script isolated, as a consequence
-  it is possible to run the script without Patchbot
-  - 💡 Tip: Switch to an existing projekt repository,
-    run `php <path to patch directory>/patch.php` and develop the patch
-    incrementally - when it's finished commit it and use Patchbot to
-    distribute it to all other repositories
-- The patch code will be executed in the root directory scope of the target
-  repository, keep this in mind for file searches
+🛡 ️Patchbot runs the patch script isolated, as a consequence it is possible
+to run the script without Patchbot.
+
+💡 Tip: Switch to an existing projekt repository, run
+`php <path to patch directory>/patch.php` and develop the patch incrementally.
+When development is finished, then commit it and use Patchbot to distribute
+the patch to all other repositories.
+
+The patch code will be executed in the root directory scope of the target
+repository, keep this in mind for file searches.
 
 ### Share a patch
 

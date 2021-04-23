@@ -18,7 +18,7 @@ class RoboFile extends \Robo\Tasks
      * Apply changes, commit, push
      *
      * @param array $options
-     * @option $repository-url HTTPS URL of Git repository
+     * @option $repository-url URI of Git repository (HTTPS/SSH/FILE)
      * @option $working-directory Working directory to checkout repositories
      * @option $patch-source-directory Source directory for all collected patches
      * @option $patch-name Name of the directory where the patch code resides
@@ -133,7 +133,7 @@ class RoboFile extends \Robo\Tasks
      * Merge one branch into another, push
      *
      * @param array $options
-     * @option $repository-url HTTPS URL of Git repository
+     * @option $repository-url URI of Git repository (HTTPS/SSH/FILE)
      * @option $working-directory Working directory to checkout repositories
      * @option $source Source branch name
      * @option $target Target branch name
