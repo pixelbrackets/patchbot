@@ -121,12 +121,12 @@ class RoboFile extends \Robo\Tasks
             ->silent(true)
             ->run();
 
-        // Create PR
-        // GitLab: `push` with push options https://docs.gitlab.com/ee/user/project/push_options.html#push-options-for-merge-requests & https://gitlab.com/gitlab-org/gitlab-foss/-/merge_requests/26752
-        // GitHub: `request-pull` and manual work https://hackernoon.com/how-to-git-pr-from-the-command-line-a5b204a57ab1
-        // Other: Show link to origin and ask to open it in a browser? (silent = false)
-        $this->say('Create PR manually');
-        $this->taskOpenBrowser($options['repository-url'])->run();
+        // Suggest next steps
+        $this->say('Patch applied');
+        $this->say('- Run `./vendor/bin/patchbot merge --source='
+            . $patchBranch
+            . ' --target=<target branch>'
+            . ' --repository-url=<git repository url>` to merge the feature branch');
     }
 
     /**
