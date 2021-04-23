@@ -50,15 +50,46 @@ The package follows the KISS principle.
 
 ## Installation
 
-Packagist Entry https://packagist.org/packages/pixelbrackets/patchbot/
-
-- `composer require pixelbrackets/patchbot`
-
-💡 Or use the 
+💡 Use the 
 [skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/)
 to create an example project right away.
 
 - `composer create-project pixelbrackets/patchbot-skeleton`
+
+Packagist Entry to install Patchbot only
+https://packagist.org/packages/pixelbrackets/patchbot/
+
+- `composer require pixelbrackets/patchbot`
+
+### Access rights
+
+🔑 The user running Patchbot needs to have access to the target repository.
+
+Patchbot currently uses HTTPS instead of SSH transport for connections
+to remotes.
+
+Git by default does not store any credentials. *Every connection* to a
+repository by HTTPS will prompt for a username and password.
+
+To avoid these password prompts you have three options
+
+- Allow Git to store credentials in memory for some time
+  - Example command to keep the credentials in memory for 15 minutes:
+    ```bash
+    git config --global credential.helper 'cache --timeout=900'
+    ```
+- Force Git to use SSH checkouts instead of HTTP/HTTPS
+  - Has to be configured for each host, example for GitHub & GitLab
+    ```bash
+    [url "ssh://git@github.com/"]
+    insteadOf = https://github.com/
+    [url "ssh://git@gitlab.com/"]
+    insteadOf = https://gitlab.com/
+    ```
+- Setup SSH key connections and pass a SSH URI instead to HTTPS
+  - Use `git@gitlab.com:user/project.git` as repository URL
+    instead of `https://gitlab.com/user/project` in the [patch command](#patch)
+  - ⚠️ Some features do not work with SSH URIs yet
 
 ## Source
 
@@ -72,9 +103,7 @@ Patchbot patches a given Git repository.
 
 This means it will clone the repository, create a feature branch,
 run a given PHP patch script, commit the changes with a given commit message
-and push the branch.
-
-🔑 The user running Patchbot needs to have access to the target repository.
+and push the branch to the remote.
 
 Patchbot uses a lean file structure to organize patches (see
 [skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/)).
@@ -100,6 +129,9 @@ Example file structure:
 |-- composer.json
 `-- README.md
 ```
+
+This way a migration script may be created once and applied in a row to
+many repositories or ad hoc every time the need arises.
 
 ### Apply patch
 
