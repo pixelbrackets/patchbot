@@ -2,6 +2,8 @@
 
 namespace Pixelbrackets\Patchbot;
 
+use Cocur\Slugify\Slugify;
+
 /**
  * Patchbot tasks (based on Robo)
  *
@@ -198,5 +200,40 @@ class RoboFile extends \Robo\Tasks
             ->push('origin', $options['target'])
             ->silent(true)
             ->run();
+    }
+
+    /**
+     * Create a new patch
+     *
+     * @param array $options
+     * @option $patch-name Name of the patch, used as directory name
+     * @throws \Robo\Exception\TaskException
+     */
+    public function create(array $options = [
+        'patch-name|p' => null,
+    ])
+    {
+        if (empty($options['patch-name'])) {
+            $this->say('Missing arguments');
+            return;
+        }
+        $patchName = (new Slugify())->slugify($options['patch-name']);
+
+        $this->say('Create patch ' . $patchName);
+
+        $patchDirectory = getcwd() . '/patches/' . $patchName;
+
+        if (is_dir($patchDirectory)) {
+            $this->say('Patch directory »' . $patchDirectory . '« already exists');
+            return;
+        }
+
+        $this->_copyDir(__DIR__ . '/../patches/template/', $patchDirectory);
+
+        $this->say('Patch directory created');
+        $this->say('- Edit patch.php & commit-message.txt in ' . $patchDirectory);
+        $this->say('- Run `./vendor/bin/patchbot patch --patch-name='
+            . $patchName
+            . ' --repository-url=<git repository url>` to apply the patch to a repository');
     }
 }
