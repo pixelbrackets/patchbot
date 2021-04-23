@@ -1,5 +1,11 @@
 # Changelog
 
+2021-04-23 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.7.0
+  * FEATURE Add task to create a new patch
+  * FEATURE Docs: How to deal with credentials
+
 2020-12-16 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.6.0
