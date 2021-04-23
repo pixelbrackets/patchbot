@@ -134,6 +134,8 @@ then use the `halt-before-commit` option:
 
 ### Merge feature branch
 
+✨️Patchbot intentionally creates a feature branch to apply patches.
+
 When you reviewed the feature branch and all tests are successful then
 you can use Patchbot again to merge the feature branch.
 
@@ -145,13 +147,19 @@ branch `main` in repository `https://git.example.com/repository`:
 
 ### Add a new patch
 
-- Copy the patch template folder `template` and rename it as desired
+- Example command to create a patch named `add-changelog-file` (the name is
+  used as directory name and therefore slugified automatically)
+  ```bash
+  ./vendor/bin/patchbot create --patch-name="Add CHANGELOG file"
+  ```
+  - Or copy the example folder `template` manually and rename it as desired
 - Replace the commit message in `commit-message.txt`
 - Replace the patch code in `patch.php`
 
+
 - 🛡 ️Patchbot runs the patch script isolated, as a consequence
   it is possible to run the script without Patchbot
-  - 💡 Tip: Switch to a development repository,
+  - 💡 Tip: Switch to an existing projekt repository,
     run `php <path to patch directory>/patch.php` and develop the patch
     incrementally - when it's finished commit it and use Patchbot to
     distribute it to all other repositories
