@@ -3,6 +3,7 @@
 namespace Pixelbrackets\Patchbot;
 
 use Cocur\Slugify\Slugify;
+use Robo\Contract\VerbosityThresholdInterface;
 
 /**
  * Patchbot tasks (based on Robo)
@@ -99,7 +100,7 @@ class RoboFile extends \Robo\Tasks
             $this->say('Clone repository');
             $this->taskGitStack()
                 ->cloneRepo($options['repository-url'], $repositoryName)
-                ->silent(true)
+                ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
                 ->run();
         }
         chdir($repositoryName);
@@ -111,27 +112,27 @@ class RoboFile extends \Robo\Tasks
         $this->taskGitStack()
             ->checkout($options['source'] . ' --')
             ->pull()
-            ->silent(true)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
         $this->say('Fetch branch ' . $options['target']);
         $this->taskGitStack()
             ->checkout($options['target'] . ' --')
             ->pull()
-            ->silent(true)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
         // Merge!
         $this->say('Merge branches');
         $this->taskGitStack()
             ->merge($options['source'])
-            ->silent(true)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
         // Push branch
         $this->say('Push branch');
         $this->taskGitStack()
             ->push('origin', $options['target'])
-            ->silent(true)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
     }
 
@@ -193,7 +194,7 @@ class RoboFile extends \Robo\Tasks
             $this->say('Clone repository');
             $gitClone = $this->taskGitStack()
                 ->cloneRepo($options['repository-url'], $repositoryName)
-                ->silent(true)
+                ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
                 ->run();
 
             if ($gitClone->wasSuccessful() !== true) {
@@ -211,7 +212,7 @@ class RoboFile extends \Robo\Tasks
             ->checkout($options['source-branch'])
             ->pull()
             ->checkout('-b ' . $patchBranch)
-            ->silent(true)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
         // Patch!
@@ -219,7 +220,7 @@ class RoboFile extends \Robo\Tasks
         try {
             $patchFile = $patchSourceDirectory . $options['patch-name'] . '/patch.php';
             $output = shell_exec('php ' . escapeshellcmd($patchFile));
-            echo $output;
+            $this->say($output);
         } catch (Exception $e) {
             throw new \Robo\Exception\TaskException($this, 'Patch script execution failed');
         }
@@ -250,14 +251,14 @@ class RoboFile extends \Robo\Tasks
         $this->taskGitStack()
             ->add('-A')
             ->commit($commitMessage)
-            ->silent(true)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
         // Push branch
         $this->say('Push branch');
         $this->taskGitStack()
             ->push('origin', $patchBranch)
-            ->silent(true)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
         return true;
