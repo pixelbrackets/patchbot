@@ -90,7 +90,7 @@ class RoboFile extends \Robo\Tasks
         }
 
         // Set working directory
-        $workingDirectory = $options['working-directory'] ?? $this->_tmpDir();
+        $workingDirectory = $options['working-directory'] ?? $this->getTemporaryDirectory();
         $this->say('Switch to working directory ' . $workingDirectory);
         chdir($workingDirectory);
 
@@ -162,7 +162,9 @@ class RoboFile extends \Robo\Tasks
             return;
         }
 
-        $this->_copyDir(__DIR__ . '/../patches/template/', $patchDirectory);
+        $this->taskCopyDir(__DIR__ . '/../patches/template/', $patchDirectory)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
 
         $this->say('Patch directory created');
         $this->say('- Edit patch.php & commit-message.txt in ' . $patchDirectory);
@@ -183,7 +185,7 @@ class RoboFile extends \Robo\Tasks
     {
         // Set working directory
         $patchSourceDirectory = ($options['patch-source-directory'] ?? getcwd() . '/patches/') . '/';
-        $workingDirectory = $options['working-directory'] ?? $this->_tmpDir();
+        $workingDirectory = $options['working-directory'] ?? $this->getTemporaryDirectory();
         $repositoryName = basename($options['repository-url']);
 
         $this->say('Switch to working directory ' . $workingDirectory);
@@ -262,5 +264,18 @@ class RoboFile extends \Robo\Tasks
             ->run();
 
         return true;
+    }
+
+    /**
+     * Create a temporary directory
+     *
+     * @return string Directory path
+     */
+    protected function getTemporaryDirectory()
+    {
+        $result = $this->taskTmpDir('tmp_patchbot')
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+        return $result['path'] ?? '';
     }
 }
