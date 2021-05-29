@@ -42,91 +42,24 @@ class RoboFile extends \Robo\Tasks
             return;
         }
 
-        // Set working directory
-        $patchSourceDirectory = ($options['patch-source-directory'] ?? getcwd() . '/patches/') . '/';
-        $workingDirectory = $options['working-directory'] ?? $this->_tmpDir();
-        $this->say('Switch to working directory ' . $workingDirectory);
-        chdir($workingDirectory);
-
-        // Clone repo or use existing repository
-        $repositoryName = basename($options['repository-url']);
-        if (false === is_dir($repositoryName)) {
-            $this->say('Clone repository');
-            $gitClone = $this->taskGitStack()
-                ->cloneRepo($options['repository-url'], $repositoryName)
-                ->silent(true)
-                ->run();
-
-            if ($gitClone->wasSuccessful() !== true) {
-                throw new \Robo\Exception\TaskException($this, 'Cloning failed');
-            }
-        }
-        chdir($repositoryName);
-        $currentDirectory = getcwd();
-        $this->say('Use repository in ' . $currentDirectory);
-
-        // Checkout main branch, update, create new feature branch
-        $patchBranch = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
-        $this->say('Create new branch ' . $patchBranch);
-        $this->taskGitStack()
-            ->checkout($options['source-branch'])
-            ->pull()
-            ->checkout('-b ' . $patchBranch)
-            ->silent(true)
-            ->run();
-
-        // Patch!
-        $this->say('Run patch script');
         try {
-            $patchFile = $patchSourceDirectory . $options['patch-name'] . '/patch.php';
-            $output = shell_exec('php ' . escapeshellcmd($patchFile));
-            echo $output;
-        } catch (Exception $e) {
-            throw new \Robo\Exception\TaskException($this, 'Patch script execution failed');
+            $patchApplied = $this->runPatch($options);
+        } catch (Exception | \Robo\Exception\TaskException $e) {
+            $this->io()->error('An error occured');
+            throw new \Robo\Exception\TaskException($this, 'Something went wrong');
         }
-        chdir($currentDirectory);
 
-        // Check for changes
-        $this->say('Commit changes');
-        $fileChanges = exec('git status -s');
-        if (empty($fileChanges)) {
-            $this->say('Nothing to commit, no changes in repository');
+        if ($patchApplied === false) {
+            $this->io()->warning('Patch not applied (nothing to change)');
             return;
         }
 
-        // Halt for manual review before commit
-        if ($options['halt-before-commit']) {
-            $this->say('Halt for manual review');
-            $this->say('Working directory: ' . PHP_EOL . $currentDirectory);
-            $this->say('File changes: ' . PHP_EOL . $fileChanges);
-            $question = $this->io()->confirm('Continue?', true);
-            if ($question === false) {
-                return;
-            }
-        }
-
-        // Commit changes
-        $this->say('Commit changes');
-        $commitMessage = file_get_contents($patchSourceDirectory . $options['patch-name'] . '/commit-message.txt');
-        $this->taskGitStack()
-            ->add('-A')
-            ->commit($commitMessage)
-            ->silent(true)
-            ->run();
-
-        // Push branch
-        $this->say('Push branch');
-        $this->taskGitStack()
-            ->push('origin', $patchBranch)
-            ->silent(true)
-            ->run();
-
+        $this->io()->success('Patch applied');
         // Suggest next steps
-        $this->say('Patch applied');
-        $this->say('- Run `./vendor/bin/patchbot merge --source='
-            . $patchBranch
-            . ' --target=<target branch>'
-            . ' --repository-url=<git repository url>` to merge the feature branch');
+        $this->io()->block('Hint: Run `./vendor/bin/patchbot merge'
+        . ' --source=<source branch>'
+        . ' --target=<target branch>'
+        . ' --repository-url=<git repository url>` to merge the feature branch');
     }
 
     /**
@@ -235,5 +168,98 @@ class RoboFile extends \Robo\Tasks
         $this->say('- Run `./vendor/bin/patchbot patch --patch-name='
             . $patchName
             . ' --repository-url=<git repository url>` to apply the patch to a repository');
+    }
+
+
+    /**
+     * Taskrunner steps to apply the patch
+     *
+     * @param array $options Options passed from parent task
+     * @return bool true = patch applied
+     * @throws \Robo\Exception\TaskException
+     */
+    protected function runPatch(array $options)
+    {
+        // Set working directory
+        $patchSourceDirectory = ($options['patch-source-directory'] ?? getcwd() . '/patches/') . '/';
+        $workingDirectory = $options['working-directory'] ?? $this->_tmpDir();
+        $repositoryName = basename($options['repository-url']);
+
+        $this->say('Switch to working directory ' . $workingDirectory);
+        chdir($workingDirectory);
+
+        // Clone repo or use existing repository
+        if (false === is_dir($repositoryName)) {
+            $this->say('Clone repository');
+            $gitClone = $this->taskGitStack()
+                ->cloneRepo($options['repository-url'], $repositoryName)
+                ->silent(true)
+                ->run();
+
+            if ($gitClone->wasSuccessful() !== true) {
+                throw new \Robo\Exception\TaskException($this, 'Cloning failed');
+            }
+        }
+        chdir($repositoryName);
+        $currentDirectory = getcwd();
+        $this->say('Use repository in ' . $currentDirectory);
+
+        // Checkout main branch, update, create new feature branch
+        $patchBranch = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
+        $this->say('Create new branch ' . $patchBranch);
+        $this->taskGitStack()
+            ->checkout($options['source-branch'])
+            ->pull()
+            ->checkout('-b ' . $patchBranch)
+            ->silent(true)
+            ->run();
+
+        // Patch!
+        $this->say('Run patch script');
+        try {
+            $patchFile = $patchSourceDirectory . $options['patch-name'] . '/patch.php';
+            $output = shell_exec('php ' . escapeshellcmd($patchFile));
+            echo $output;
+        } catch (Exception $e) {
+            throw new \Robo\Exception\TaskException($this, 'Patch script execution failed');
+        }
+        chdir($currentDirectory);
+
+        // Check for changes
+        $this->say('Commit changes');
+        $fileChanges = exec('git status -s');
+        if (empty($fileChanges)) {
+            $this->say('Nothing to commit, no changes in repository');
+            return false;
+        }
+
+        // Halt for manual review before commit
+        if ($options['halt-before-commit']) {
+            $this->say('Halt for manual review');
+            $this->say('Working directory: ' . PHP_EOL . $currentDirectory);
+            $this->say('File changes: ' . PHP_EOL . $fileChanges);
+            $question = $this->io()->confirm('Continue?', true);
+            if ($question === false) {
+                return false;
+            }
+        }
+
+        // Commit changes
+        $this->say('Commit changes');
+        $commitMessage = file_get_contents($patchSourceDirectory . $options['patch-name'] . '/commit-message.txt');
+        $this->taskGitStack()
+            ->add('-A')
+            ->commit($commitMessage)
+            ->silent(true)
+            ->run();
+
+        // Push branch
+        $this->say('Push branch');
+        $this->taskGitStack()
+            ->push('origin', $patchBranch)
+            ->silent(true)
+            ->run();
+
+        return true;
     }
 }
