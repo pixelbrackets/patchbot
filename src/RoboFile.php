@@ -39,7 +39,7 @@ class RoboFile extends \Robo\Tasks
     ])
     {
         if (empty($options['repository-url'])) {
-            $this->say('Missing arguments');
+            $this->io()->error('Missing arguments');
             return;
         }
 
@@ -98,7 +98,7 @@ class RoboFile extends \Robo\Tasks
             empty($options['source']) ||
             empty($options['target'])
         ) {
-            $this->say('Missing arguments');
+            $this->io()->error('Missing arguments');
             return;
         }
 
@@ -170,7 +170,7 @@ class RoboFile extends \Robo\Tasks
     ])
     {
         if (empty($options['patch-name'])) {
-            $this->say('Missing arguments');
+            $this->io()->error('Missing arguments');
             return;
         }
 
@@ -185,7 +185,7 @@ class RoboFile extends \Robo\Tasks
 
         $this->say('Create patch ' . $patchName);
         if (is_dir($patchDirectory)) {
-            $this->say('Patch directory »' . $patchDirectory . '« already exists');
+            $this->io()->error('Patch directory »' . $patchDirectory . '« already exists');
             return;
         }
 
@@ -260,9 +260,9 @@ class RoboFile extends \Robo\Tasks
 
         // Halt for manual review before commit
         if ($options['halt-before-commit']) {
-            $this->say('Halt for manual review');
-            $this->say('Working directory: ' . PHP_EOL . $currentDirectory);
-            $this->say('File changes: ' . PHP_EOL . $fileChanges);
+            $this->io()->text('Halt for manual review');
+            $this->io()->text('Working directory: ' . PHP_EOL . $currentDirectory);
+            $this->io()->text('File changes: ' . PHP_EOL . $fileChanges);
             $question = $this->io()->confirm('Continue?', true);
             if ($question === false) {
                 return false;
