@@ -43,6 +43,19 @@ class RoboFile extends \Robo\Tasks
             return;
         }
 
+        $options['patch-source-directory'] = ($options['patch-source-directory'] ?? getcwd() . '/patches/') . '/';
+        $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
+        $options['branch-name'] = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
+        $repositoryName = basename($options['repository-url']);
+
+        // Print summary
+        $this->io()->section('Patch');
+        $this->io()->listing([
+            'Patch: ' . $options['patch-name'],
+            'Branch: ' . $options['branch-name'],
+            'Repository: ' . $repositoryName . ' (' . $options['repository-url'] . ')'
+        ]);
+
         try {
             $patchApplied = $this->runPatch($options);
         } catch (Exception | \Robo\Exception\TaskException $e) {
@@ -89,13 +102,22 @@ class RoboFile extends \Robo\Tasks
             return;
         }
 
-        // Set working directory
         $workingDirectory = $options['working-directory'] ?? $this->getTemporaryDirectory();
+        $repositoryName = basename($options['repository-url']);
+
+        // Print summary
+        $this->io()->section('Merge');
+        $this->io()->listing([
+            'Source Branch: ' . $options['source'],
+            'Target Branch: ' . $options['target'],
+            'Repository: ' . $repositoryName . ' (' . $options['repository-url'] . ')'
+        ]);
+
+        // Set working directory
         $this->say('Switch to working directory ' . $workingDirectory);
         chdir($workingDirectory);
 
         // Clone repo or use existing repository
-        $repositoryName = basename($options['repository-url']);
         if (false === is_dir($repositoryName)) {
             $this->say('Clone repository');
             $this->taskGitStack()
@@ -151,12 +173,17 @@ class RoboFile extends \Robo\Tasks
             $this->say('Missing arguments');
             return;
         }
+
         $patchName = (new Slugify())->slugify($options['patch-name']);
-
-        $this->say('Create patch ' . $patchName);
-
         $patchDirectory = getcwd() . '/patches/' . $patchName;
 
+        // Print summary
+        $this->io()->section('Create');
+        $this->io()->listing([
+            'Patch: ' . $options['patch-name']
+        ]);
+
+        $this->say('Create patch ' . $patchName);
         if (is_dir($patchDirectory)) {
             $this->say('Patch directory »' . $patchDirectory . '« already exists');
             return;
@@ -173,7 +200,6 @@ class RoboFile extends \Robo\Tasks
             . ' --repository-url=<git repository url>` to apply the patch to a repository');
     }
 
-
     /**
      * Taskrunner steps to apply the patch
      *
@@ -183,22 +209,19 @@ class RoboFile extends \Robo\Tasks
      */
     protected function runPatch(array $options)
     {
-        // Set working directory
-        $patchSourceDirectory = ($options['patch-source-directory'] ?? getcwd() . '/patches/') . '/';
-        $workingDirectory = $options['working-directory'] ?? $this->getTemporaryDirectory();
         $repositoryName = basename($options['repository-url']);
 
-        $this->say('Switch to working directory ' . $workingDirectory);
-        chdir($workingDirectory);
+        // Set working directory
+        $this->say('Switch to working directory ' . $options['working-directory']);
+        chdir($options['working-directory']);
 
-        // Clone repo or use existing repository
+        // Clone repo or use existing repository in workspace
         if (false === is_dir($repositoryName)) {
             $this->say('Clone repository');
             $gitClone = $this->taskGitStack()
                 ->cloneRepo($options['repository-url'], $repositoryName)
                 ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
                 ->run();
-
             if ($gitClone->wasSuccessful() !== true) {
                 throw new \Robo\Exception\TaskException($this, 'Cloning failed');
             }
@@ -208,19 +231,18 @@ class RoboFile extends \Robo\Tasks
         $this->say('Use repository in ' . $currentDirectory);
 
         // Checkout main branch, update, create new feature branch
-        $patchBranch = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
-        $this->say('Create new branch ' . $patchBranch);
+        $this->say('Create new branch ' . $options['branch-name']);
         $this->taskGitStack()
             ->checkout($options['source-branch'])
             ->pull()
-            ->checkout('-b ' . $patchBranch)
+            ->checkout('-b ' . $options['branch-name'])
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
         // Patch!
         $this->say('Run patch script');
         try {
-            $patchFile = $patchSourceDirectory . $options['patch-name'] . '/patch.php';
+            $patchFile = $options['patch-source-directory'] . $options['patch-name'] . '/patch.php';
             $output = shell_exec('php ' . escapeshellcmd($patchFile));
             $this->say($output);
         } catch (Exception $e) {
@@ -229,7 +251,7 @@ class RoboFile extends \Robo\Tasks
         chdir($currentDirectory);
 
         // Check for changes
-        $this->say('Commit changes');
+        $this->say('Detect changes');
         $fileChanges = exec('git status -s');
         if (empty($fileChanges)) {
             $this->say('Nothing to commit, no changes in repository');
@@ -249,7 +271,7 @@ class RoboFile extends \Robo\Tasks
 
         // Commit changes
         $this->say('Commit changes');
-        $commitMessage = file_get_contents($patchSourceDirectory . $options['patch-name'] . '/commit-message.txt');
+        $commitMessage = file_get_contents($options['patch-source-directory'] . $options['patch-name'] . '/commit-message.txt');
         $this->taskGitStack()
             ->add('-A')
             ->commit($commitMessage)
@@ -259,7 +281,7 @@ class RoboFile extends \Robo\Tasks
         // Push branch
         $this->say('Push branch');
         $this->taskGitStack()
-            ->push('origin', $patchBranch)
+            ->push('origin', $options['branch-name'])
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
