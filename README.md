@@ -174,6 +174,9 @@ the commit is created, then use the `halt-before-commit` option:
 ./vendor/bin/patchbot patch --halt-before-commit --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
+To be more verbose add `-v` to each command. Add `-vvv` for debugging.
+The flag `--no-ansi` will remove output formation.
+
 ### Merge feature branch
 
 ✨️Patchbot intentionally creates a feature branch to apply patches.

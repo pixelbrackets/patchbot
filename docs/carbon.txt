@@ -1,10 +1,18 @@
-~ $ ./vendor/bin/patchbot patch --patch-name=my-patch --repository-url=https://git.example.com/example-repository
+~/acme-migrations $ ./vendor/bin/patchbot patch --patch-name=my-patch --repository-url=https://git.example.com/example-repository -v
 
-➜  Switch to working directory /tmp/tmp_tX2N9S7J34xA
+Patch
+-----
+
+ * Patch: my-patch
+ * Branch: 20210530_patchbot_60b3d2d76b7c5
+ * Repository: example-repository (https://git.example.com/example-repository)
+
+➜  Switch to working directory
 ➜  Clone repository
-➜  Use repository in /tmp/tmp_tX2N9S7J34xA/example-repository
-➜  Create new branch 20200805_patchbot_5f3512a7500a1
+➜  Create new branch
 ➜  Run patch script
+➜  Detect changes
 ➜  Commit changes
 ➜  Push branch
-➜  Create PR manually
+
+ [OK] Patch applied
