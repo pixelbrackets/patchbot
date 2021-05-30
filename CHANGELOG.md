@@ -1,5 +1,13 @@
 # Changelog
 
+2021-05-30 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.9.0
+  * FEATURE Print summary for each task
+  * FEATURE Show clear patch result
+  * FEATURE Be much less verbose by default
+  * BUGFIX Remove git extension from path names
+
 2021-04-23 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.8.0
