@@ -4,6 +4,7 @@ namespace Pixelbrackets\Patchbot;
 
 use Cocur\Slugify\Slugify;
 use Robo\Contract\VerbosityThresholdInterface;
+use Robo\Exception\TaskException;
 
 /**
  * Patchbot tasks (based on Robo)
@@ -26,7 +27,7 @@ class RoboFile extends \Robo\Tasks
      * @option $source-branch Name of the branch to create a new branch upon
      * @option $branch-name Name of the feature branch to be created
      * @option $halt-before-commit Pause before changes are commited, asks to continue
-     * @throws \Robo\Exception\TaskException
+     * @throws TaskException
      */
     public function patch(array $options = [
         'repository-url|g' => null,
@@ -45,6 +46,7 @@ class RoboFile extends \Robo\Tasks
 
         $options['patch-source-directory'] = ($options['patch-source-directory'] ?? getcwd() . '/patches/') . '/';
         $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
+        /** @noinspection NonSecureUniqidUsageInspection */
         $options['branch-name'] = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
         $repositoryName = basename($options['repository-url']);
 
@@ -58,9 +60,9 @@ class RoboFile extends \Robo\Tasks
 
         try {
             $patchApplied = $this->runPatch($options);
-        } catch (Exception | \Robo\Exception\TaskException $e) {
+        } catch (Exception | TaskException $e) {
             $this->io()->error('An error occured');
-            throw new \Robo\Exception\TaskException($this, 'Something went wrong');
+            throw new TaskException($this, 'Something went wrong');
         }
 
         if ($patchApplied === false) {
@@ -84,7 +86,7 @@ class RoboFile extends \Robo\Tasks
      * @option $working-directory Working directory to checkout repositories
      * @option $source Source branch name
      * @option $target Target branch name
-     * @throws \Robo\Exception\TaskException
+     * @throws TaskException
      */
     public function merge(array $options = [
         'repository-url|g' => null,
@@ -163,7 +165,7 @@ class RoboFile extends \Robo\Tasks
      *
      * @param array $options
      * @option $patch-name Name of the patch, used as directory name
-     * @throws \Robo\Exception\TaskException
+     * @throws TaskException
      */
     public function create(array $options = [
         'patch-name|p' => null,
@@ -205,9 +207,9 @@ class RoboFile extends \Robo\Tasks
      *
      * @param array $options Options passed from parent task
      * @return bool true = patch applied
-     * @throws \Robo\Exception\TaskException
+     * @throws TaskException
      */
-    protected function runPatch(array $options)
+    protected function runPatch(array $options): bool
     {
         $repositoryName = basename($options['repository-url']);
 
@@ -223,7 +225,7 @@ class RoboFile extends \Robo\Tasks
                 ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
                 ->run();
             if ($result->wasSuccessful() !== true) {
-                throw new \Robo\Exception\TaskException($this, 'Cloning failed');
+                throw new TaskException($this, 'Cloning failed');
             }
         }
         chdir($repositoryName);
@@ -239,7 +241,7 @@ class RoboFile extends \Robo\Tasks
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
         if ($result->wasSuccessful() !== true) {
-            throw new \Robo\Exception\TaskException($this, 'Branch creation failed');
+            throw new TaskException($this, 'Branch creation failed');
         }
 
         // Patch!
@@ -249,7 +251,7 @@ class RoboFile extends \Robo\Tasks
             $output = shell_exec('php ' . escapeshellcmd($patchFile));
             $this->say($output);
         } catch (Exception $e) {
-            throw new \Robo\Exception\TaskException($this, 'Patch script execution failed');
+            throw new TaskException($this, 'Patch script execution failed');
         }
         chdir($currentDirectory);
 
@@ -281,7 +283,7 @@ class RoboFile extends \Robo\Tasks
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
         if ($result->wasSuccessful() !== true) {
-            throw new \Robo\Exception\TaskException($this, 'Commit failed');
+            throw new TaskException($this, 'Commit failed');
         }
 
         // Push branch
@@ -291,7 +293,7 @@ class RoboFile extends \Robo\Tasks
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
         if ($result->wasSuccessful() !== true) {
-            throw new \Robo\Exception\TaskException($this, 'Push failed');
+            throw new TaskException($this, 'Push failed');
         }
 
         return true;
@@ -302,7 +304,7 @@ class RoboFile extends \Robo\Tasks
      *
      * @return string Directory path
      */
-    protected function getTemporaryDirectory()
+    protected function getTemporaryDirectory(): string
     {
         $result = $this->taskTmpDir('tmp_patchbot')
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
