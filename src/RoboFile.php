@@ -300,4 +300,16 @@ class RoboFile extends \Robo\Tasks
             ->run();
         return $result['path'] ?? '';
     }
+
+    /**
+     * Overwrite the say method to be less verbose
+     *
+     * @param string $text
+     */
+    protected function say($text): void
+    {
+        if ($this->io()->isVerbose()) {
+            parent::say($text);
+        }
+    }
 }
