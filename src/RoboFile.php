@@ -46,7 +46,7 @@ class RoboFile extends \Robo\Tasks
         $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
         /** @noinspection NonSecureUniqidUsageInspection */
         $options['branch-name'] = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
-        $repositoryName = basename($options['repository-url']);
+        $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
 
         // Print summary
         $this->io()->section('Patch');
@@ -103,7 +103,7 @@ class RoboFile extends \Robo\Tasks
         }
 
         $workingDirectory = $options['working-directory'] ?? $this->getTemporaryDirectory();
-        $repositoryName = basename($options['repository-url']);
+        $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
 
         // Print summary
         $this->io()->section('Merge');
@@ -209,7 +209,7 @@ class RoboFile extends \Robo\Tasks
      */
     protected function runPatch(array $options): bool
     {
-        $repositoryName = basename($options['repository-url']);
+        $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
 
         // Set working directory
         $this->say('Switch to working directory ' . $options['working-directory']);
