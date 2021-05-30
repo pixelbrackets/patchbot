@@ -14,8 +14,6 @@ use Robo\Exception\TaskException;
  */
 class RoboFile extends \Robo\Tasks
 {
-    protected $initialWorkingDirectory = null;
-
     /**
      * Apply changes, commit, push
      *
