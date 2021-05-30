@@ -44,7 +44,7 @@ class RoboFile extends \Robo\Tasks
             return;
         }
 
-        $options['patch-source-directory'] = ($options['patch-source-directory'] ?? getcwd() . '/patches/') . '/';
+        $options['patch-source-directory'] = ($options['patch-source-directory'] ?? getcwd() . '/patches') . '/';
         $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
         /** @noinspection NonSecureUniqidUsageInspection */
         $options['branch-name'] = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
