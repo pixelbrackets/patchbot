@@ -218,11 +218,11 @@ class RoboFile extends \Robo\Tasks
         // Clone repo or use existing repository in workspace
         if (false === is_dir($repositoryName)) {
             $this->say('Clone repository');
-            $gitClone = $this->taskGitStack()
+            $result = $this->taskGitStack()
                 ->cloneRepo($options['repository-url'], $repositoryName)
                 ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
                 ->run();
-            if ($gitClone->wasSuccessful() !== true) {
+            if ($result->wasSuccessful() !== true) {
                 throw new \Robo\Exception\TaskException($this, 'Cloning failed');
             }
         }
@@ -232,12 +232,15 @@ class RoboFile extends \Robo\Tasks
 
         // Checkout main branch, update, create new feature branch
         $this->say('Create new branch ' . $options['branch-name']);
-        $this->taskGitStack()
+        $result = $this->taskGitStack()
             ->checkout($options['source-branch'])
             ->pull()
             ->checkout('-b ' . $options['branch-name'])
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
+        if ($result->wasSuccessful() !== true) {
+            throw new \Robo\Exception\TaskException($this, 'Branch creation failed');
+        }
 
         // Patch!
         $this->say('Run patch script');
@@ -272,18 +275,24 @@ class RoboFile extends \Robo\Tasks
         // Commit changes
         $this->say('Commit changes');
         $commitMessage = file_get_contents($options['patch-source-directory'] . $options['patch-name'] . '/commit-message.txt');
-        $this->taskGitStack()
+        $result = $this->taskGitStack()
             ->add('-A')
             ->commit($commitMessage)
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
+        if ($result->wasSuccessful() !== true) {
+            throw new \Robo\Exception\TaskException($this, 'Commit failed');
+        }
 
         // Push branch
         $this->say('Push branch');
-        $this->taskGitStack()
+        $result = $this->taskGitStack()
             ->push('origin', $options['branch-name'])
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
+        if ($result->wasSuccessful() !== true) {
+            throw new \Robo\Exception\TaskException($this, 'Push failed');
+        }
 
         return true;
     }
