@@ -196,7 +196,7 @@ class RoboFile extends \Robo\Tasks
             return 0;
         }
 
-        $this->taskCopyDir(__DIR__ . '/../patches/template/', $patchDirectory)
+        $this->taskCopyDir([__DIR__ . '/../patches/template/' => $patchDirectory])
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
