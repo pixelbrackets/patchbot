@@ -34,14 +34,24 @@ class PatchbotCommandsTest extends TestCase
                 'list',
             ],
             [
-                'Missing arguments',
-                0,
-                'patch',
-            ],
-            [
                 '--repository-url',
                 0,
                 'patch', '--help'
+            ],
+            [
+                'Missing arguments',
+                1,
+                'patch',
+            ],
+            [
+                'Missing arguments',
+                1,
+                'merge',
+            ],
+            [
+                'Missing arguments',
+                1,
+                'create',
             ]
         ];
     }

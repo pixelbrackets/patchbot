@@ -25,6 +25,7 @@ class RoboFile extends \Robo\Tasks
      * @option $source-branch Name of the branch to create a new branch upon
      * @option $branch-name Name of the feature branch to be created
      * @option $halt-before-commit Pause before changes are commited, asks to continue
+     * @return int exit code
      * @throws TaskException
      */
     public function patch(array $options = [
@@ -35,11 +36,11 @@ class RoboFile extends \Robo\Tasks
         'source-branch' => 'master', // rename to main in next mayor release
         'branch-name' => null,
         'halt-before-commit' => false,
-    ])
+    ]): int
     {
         if (empty($options['repository-url'])) {
             $this->io()->error('Missing arguments');
-            return;
+            return 1;
         }
 
         $options['patch-source-directory'] = ($options['patch-source-directory'] ?? getcwd() . '/patches') . '/';
@@ -65,7 +66,7 @@ class RoboFile extends \Robo\Tasks
 
         if ($patchApplied === false) {
             $this->io()->warning('Patch not applied (nothing to change)');
-            return;
+            return 0;
         }
 
         $this->io()->success('Patch applied');
@@ -74,6 +75,8 @@ class RoboFile extends \Robo\Tasks
         . ' --source=<source branch>'
         . ' --target=<target branch>'
         . ' --repository-url=<git repository url>` to merge the feature branch');
+
+        return 0;
     }
 
     /**
@@ -84,6 +87,7 @@ class RoboFile extends \Robo\Tasks
      * @option $working-directory Working directory to checkout repositories
      * @option $source Source branch name
      * @option $target Target branch name
+     * @return int exit code
      * @throws TaskException
      */
     public function merge(array $options = [
@@ -91,7 +95,7 @@ class RoboFile extends \Robo\Tasks
         'working-directory|d' => null,
         'source|s' => null,
         'target|t' => null
-    ])
+    ]): int
     {
         if (
             empty($options['repository-url']) ||
@@ -99,7 +103,7 @@ class RoboFile extends \Robo\Tasks
             empty($options['target'])
         ) {
             $this->io()->error('Missing arguments');
-            return;
+            return 1;
         }
 
         $workingDirectory = $options['working-directory'] ?? $this->getTemporaryDirectory();
@@ -156,6 +160,8 @@ class RoboFile extends \Robo\Tasks
             ->push('origin', $options['target'])
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
+
+        return 0;
     }
 
     /**
@@ -163,15 +169,16 @@ class RoboFile extends \Robo\Tasks
      *
      * @param array $options
      * @option $patch-name Name of the patch, used as directory name
+     * @return int exit code
      * @throws TaskException
      */
     public function create(array $options = [
         'patch-name|p' => null,
-    ])
+    ]): int
     {
         if (empty($options['patch-name'])) {
             $this->io()->error('Missing arguments');
-            return;
+            return 1;
         }
 
         $patchName = (new Slugify())->slugify($options['patch-name']);
@@ -186,7 +193,7 @@ class RoboFile extends \Robo\Tasks
         $this->say('Create patch ' . $patchName);
         if (is_dir($patchDirectory)) {
             $this->io()->error('Patch directory »' . $patchDirectory . '« already exists');
-            return;
+            return 0;
         }
 
         $this->taskCopyDir(__DIR__ . '/../patches/template/', $patchDirectory)
@@ -198,12 +205,14 @@ class RoboFile extends \Robo\Tasks
         $this->say('- Run `./vendor/bin/patchbot patch --patch-name='
             . $patchName
             . ' --repository-url=<git repository url>` to apply the patch to a repository');
+
+        return 0;
     }
 
     /**
      * Taskrunner steps to apply the patch
      *
-     * @param array $options Options passed from parent task
+     * @param array $options Options array passed from parent task
      * @return bool true = patch applied
      * @throws TaskException
      */
@@ -314,6 +323,7 @@ class RoboFile extends \Robo\Tasks
      * Overwrite the say method to be less verbose
      *
      * @param string $text
+     * @return void
      */
     protected function say($text): void
     {

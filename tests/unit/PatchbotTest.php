@@ -15,7 +15,7 @@ class PatchbotTest extends TestCase
     public function testPatchRequiresRepositoryUrl()
     {
         $patchbot = new RoboFile();
-        $expectedOutput = null;
+        $expectedOutput = 1; // exit code 1 = error
 
         $parameters = [];
         $this->assertSame($expectedOutput, $patchbot->patch($parameters));
