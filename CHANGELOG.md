@@ -1,5 +1,12 @@
 # Changelog
 
+2021-05-31 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.9.1
+  * BUGFIX List of changed files incomplete
+  * BUGFIX Set expected return types for tasks (exit codes)
+  * BUGFIX Wrong copy method fails patch creation
+
 2021-05-30 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.9.0
