@@ -255,7 +255,7 @@ class RoboFile extends \Robo\Tasks
 
         // Check for changes
         $this->say('Detect changes');
-        $fileChanges = exec('git status -s');
+        $fileChanges = shell_exec('git status -s');
         if (empty($fileChanges)) {
             $this->say('Nothing to commit, no changes in repository');
             return false;
