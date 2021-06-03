@@ -232,7 +232,8 @@ class RoboFile extends \Robo\Tasks
                 ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
                 ->run();
             if ($result->wasSuccessful() !== true) {
-                throw new TaskException($this, 'Cloning failed');
+                throw new TaskException($this, 'Cloning failed - '
+                    . 'Maybe wrong URI or missing access rights');
             }
         }
         chdir($repositoryName);
@@ -248,7 +249,9 @@ class RoboFile extends \Robo\Tasks
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
         if ($result->wasSuccessful() !== true) {
-            throw new TaskException($this, 'Branch creation failed');
+            throw new TaskException($this, 'Branch creation failed - '
+                . 'Tried to create ' . $options['branch-name']
+                . ' from ' . $options['source-branch']);
         }
 
         // Patch!
