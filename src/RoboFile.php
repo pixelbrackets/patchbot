@@ -61,7 +61,7 @@ class RoboFile extends \Robo\Tasks
             $patchApplied = $this->runPatch($options);
         } catch (Exception | TaskException $e) {
             $this->io()->error('An error occured');
-            throw new TaskException($this, 'Something went wrong');
+            throw new TaskException($this, 'Something went wrong' . $e->getMessage());
         }
 
         if ($patchApplied === false) {
