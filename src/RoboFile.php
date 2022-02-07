@@ -72,9 +72,9 @@ class RoboFile extends \Robo\Tasks
         $this->io()->success('Patch applied');
         // Suggest next steps
         $this->io()->block('Hint: Run `./vendor/bin/patchbot merge'
-        . ' --source=<source branch>'
+        . ' --source=' . $options['branch-name']
         . ' --target=<target branch>'
-        . ' --repository-url=<git repository url>` to merge the feature branch');
+        . ' --repository-url=' . $options['repository-url'] . '` to merge the feature branch');
 
         return 0;
     }
