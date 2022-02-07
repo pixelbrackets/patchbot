@@ -1,5 +1,11 @@
 # Changelog
 
+2022-02-07 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.10.0
+  * FEATURE Make exception message more speaking
+  * FEATURE Print actual branch in merge hint
+
 2021-05-31 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.9.1
