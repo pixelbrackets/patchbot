@@ -72,6 +72,8 @@ Patchbot allows all protocols for connections to remotes which are supported
 by Git natively:
 [FILE, HTTP/HTTPS, SSH](https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols)
 
+The recommended protocol is SSH.
+
 #### HTTPS Credentials
 
 Git by default does not store any credentials. So *every connection* to a
@@ -86,7 +88,7 @@ you have two options:
     ```bash
     git config --global credential.helper 'cache --timeout=900'
     ```
-- Force Git to use SSH checkouts instead of HTTP/HTTPS
+- Force Git to use SSH protocol checkouts instead of HTTP/HTTPS
   - Has to be configured for each host
   - Example commands to set up the replacements for GitHub, GitLab & BitBucket
     ```bash
