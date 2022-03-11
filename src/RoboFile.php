@@ -193,7 +193,7 @@ class RoboFile extends \Robo\Tasks
         $this->say('Create patch ' . $patchName);
         if (is_dir($patchDirectory)) {
             $this->io()->error('Patch directory »' . $patchDirectory . '« already exists');
-            return 0;
+            return 1;
         }
 
         $this->taskCopyDir([__DIR__ . '/../patches/template/' => $patchDirectory])
