@@ -200,7 +200,7 @@ class RoboFile extends \Robo\Tasks
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
-        $this->say('Patch directory created');
+        $this->io()->success('Patch directory created');
         $this->say('- Edit patch.php & commit-message.txt in ' . $patchDirectory);
         $this->say('- Run `./vendor/bin/patchbot patch --patch-name='
             . $patchName
