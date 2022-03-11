@@ -85,8 +85,8 @@ class RoboFile extends \Robo\Tasks
      * @param array $options
      * @option $repository-url URI of Git repository (HTTPS/SSH/FILE)
      * @option $working-directory Working directory to checkout repositories
-     * @option $source Source branch name
-     * @option $target Target branch name
+     * @option $source Source branch name (eg. feature branch)
+     * @option $target Target branch name (eg. main branch)
      * @return int exit code
      * @throws TaskException
      */
@@ -106,7 +106,7 @@ class RoboFile extends \Robo\Tasks
             return 1;
         }
 
-        $workingDirectory = $options['working-directory'] ?? $this->getTemporaryDirectory();
+        $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
         $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
 
         // Print summary
@@ -117,49 +117,19 @@ class RoboFile extends \Robo\Tasks
             'Repository: ' . $repositoryName . ' (' . $options['repository-url'] . ')'
         ]);
 
-        // Set working directory
-        $this->say('Switch to working directory ' . $workingDirectory);
-        chdir($workingDirectory);
-
-        // Clone repo or use existing repository
-        if (false === is_dir($repositoryName)) {
-            $this->say('Clone repository');
-            $this->taskGitStack()
-                ->cloneRepo($options['repository-url'], $repositoryName)
-                ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
-                ->run();
+        try {
+            $branchMerged = $this->runMerge($options);
+        } catch (Exception | TaskException $e) {
+            $this->io()->error('An error occured');
+            throw new TaskException($this, 'Something went wrong' . $e->getMessage());
         }
-        chdir($repositoryName);
-        $currentDirectory = getcwd();
-        $this->say('Use repository in ' . $currentDirectory);
 
-        // Fetch branches
-        $this->say('Fetch branch ' . $options['source']);
-        $this->taskGitStack()
-            ->checkout($options['source'] . ' --')
-            ->pull()
-            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
-            ->run();
-        $this->say('Fetch branch ' . $options['target']);
-        $this->taskGitStack()
-            ->checkout($options['target'] . ' --')
-            ->pull()
-            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
-            ->run();
+        if ($branchMerged === false) {
+            $this->io()->warning('Branch not merged (everything up-to-date)');
+            return 0;
+        }
 
-        // Merge!
-        $this->say('Merge branches');
-        $this->taskGitStack()
-            ->merge($options['source'])
-            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
-            ->run();
-
-        // Push branch
-        $this->say('Push branch');
-        $this->taskGitStack()
-            ->push('origin', $options['target'])
-            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
-            ->run();
+        $this->io()->success('Merge done');
 
         return 0;
     }
@@ -300,6 +270,86 @@ class RoboFile extends \Robo\Tasks
         $this->say('Push branch');
         $result = $this->taskGitStack()
             ->push('origin', $options['branch-name'])
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+        if ($result->wasSuccessful() !== true) {
+            throw new TaskException($this, 'Push failed');
+        }
+
+        return true;
+    }
+
+    /**
+     * Taskrunner steps to apply the merge
+     *
+     * @param array $options Options array passed from parent task
+     * @return bool true = merge done
+     * @throws TaskException
+     */
+    protected function runMerge(array $options): bool
+    {
+        $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
+
+        // Set working directory
+        $this->say('Switch to working directory ' . $options['working-directory']);
+        chdir($options['working-directory']);
+
+        // Clone repo or use existing repository
+        if (false === is_dir($repositoryName)) {
+            $this->say('Clone repository');
+            $result = $this->taskGitStack()
+                ->cloneRepo($options['repository-url'], $repositoryName)
+                ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+                ->run();
+            if ($result->wasSuccessful() !== true) {
+                throw new TaskException($this, 'Cloning failed - '
+                    . 'Maybe wrong URI or missing access rights');
+            }
+        }
+        chdir($repositoryName);
+        $currentDirectory = getcwd();
+        $this->say('Use repository in ' . $currentDirectory);
+
+        // Fetch branches - <source> & <target>
+        $this->say('Fetch branch ' . $options['source']);
+        $result = $this->taskGitStack()
+            ->checkout($options['source'] . ' --')
+            ->pull()
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+        if ($result->wasSuccessful() !== true) {
+            throw new TaskException($this, 'Source branch does not exist');
+        }
+        $this->say('Fetch branch ' . $options['target']);
+        $result = $this->taskGitStack()
+            ->checkout($options['target'] . ' --')
+            ->pull()
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+        if ($result->wasSuccessful() !== true) {
+            throw new TaskException($this, 'Target branch does not exist');
+        }
+
+        $mergeStatus = shell_exec('git merge-base --is-ancestor ' . escapeshellcmd($options['source']) . ' ' . escapeshellcmd($options['target']) . ' && echo "merged" || echo "tbd"');
+        if (trim($mergeStatus) === 'merged') {
+            $this->say('Nothing to merge - Everything up-to-date');
+            return false;
+        }
+
+        // Merge!
+        $this->say('Merge branches');
+        $result = $this->taskGitStack()
+            ->merge($options['source'])
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+        if ($result->wasSuccessful() !== true) {
+            throw new TaskException($this, 'Merge conflict');
+        }
+
+        // Push branch
+        $this->say('Push branch');
+        $result = $this->taskGitStack()
+            ->push('origin', $options['target'])
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
         if ($result->wasSuccessful() !== true) {
