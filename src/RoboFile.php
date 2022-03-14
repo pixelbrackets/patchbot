@@ -19,12 +19,12 @@ class RoboFile extends \Robo\Tasks
      *
      * @param array $options
      * @option $repository-url URI of Git repository (HTTPS/SSH/FILE)
-     * @option $working-directory Working directory to checkout repositories
+     * @option $working-directory Working directory to check out repositories
      * @option $patch-source-directory Source directory for all collected patches
      * @option $patch-name Name of the directory where the patch code resides
      * @option $source-branch Name of the branch to create a new branch upon
      * @option $branch-name Name of the feature branch to be created
-     * @option $halt-before-commit Pause before changes are commited, asks to continue
+     * @option $halt-before-commit Pause before changes are committed, asks to continue
      * @return int exit code
      * @throws TaskException
      */
@@ -84,9 +84,9 @@ class RoboFile extends \Robo\Tasks
      *
      * @param array $options
      * @option $repository-url URI of Git repository (HTTPS/SSH/FILE)
-     * @option $working-directory Working directory to checkout repositories
-     * @option $source Source branch name (eg. feature branch)
-     * @option $target Target branch name (eg. main branch)
+     * @option $working-directory Working directory to check out repositories
+     * @option $source Source branch name (e.g. feature branch)
+     * @option $target Target branch name (e.g. main branch)
      * @return int exit code
      * @throws TaskException
      */
@@ -184,11 +184,12 @@ class RoboFile extends \Robo\Tasks
      *
      * @param string $batchCommand Name of command to run in batch mode (patch or merge, default: patch)
      * @param array $options
-     * @option $working-directory Working directory to checkout repositories
+     * @option $working-directory Working directory to check out repositories
      * @option $patch-source-directory Source directory for all collected patches
      * @option $patch-name Name of the directory where the patch code resides
      * @option $branch-name Name of the feature branch to be created
-     * @option $halt-before-commit Pause before changes are commited, asks to continue
+     * @option $halt-before-commit Pause before changes are committed, asks to continue
+     * @option $source Source branch name (e.g. feature branch)
      * @return int exit code
      * @throws TaskException
      */
@@ -198,6 +199,7 @@ class RoboFile extends \Robo\Tasks
         'patch-name|p' => 'template',
         'branch-name' => null,
         'halt-before-commit' => false,
+        'source' => null
     ]): int
     {
         $workingDirectory = getcwd();
@@ -214,18 +216,32 @@ class RoboFile extends \Robo\Tasks
         });
         array_shift($repositories); // remove column header
 
-        foreach ($repositories as $repository) {
-            /** @noinspection DisconnectedForeachInstructionInspection */
-            chdir($workingDirectory); // reset working directory
-            $this->patch([
-                'repository-url' => $repository[0],
-                'working-directory' => $options['working-directory'],
-                'patch-source-directory' => $options['patch-source-directory'],
-                'patch-name' => $options['patch-name'],
-                'source-branch' => $repository[1],
-                'branch-name' => $options['branch-name'],
-                'halt-before-commit' => $options['halt-before-commit'],
-            ]);
+        if ($batchCommand === 'patch') {
+            foreach ($repositories as $repository) {
+                /** @noinspection DisconnectedForeachInstructionInspection */
+                chdir($workingDirectory); // reset working directory
+                $this->patch([
+                    'repository-url' => $repository[0],
+                    'working-directory' => $options['working-directory'],
+                    'patch-source-directory' => $options['patch-source-directory'],
+                    'patch-name' => $options['patch-name'],
+                    'source-branch' => $repository[1],
+                    'branch-name' => $options['branch-name'],
+                    'halt-before-commit' => $options['halt-before-commit'],
+                ]);
+            }
+        }
+        if ($batchCommand === 'merge') {
+            foreach ($repositories as $repository) {
+                /** @noinspection DisconnectedForeachInstructionInspection */
+                chdir($workingDirectory); // reset working directory
+                $this->merge([
+                    'repository-url' => $repository[0],
+                    'working-directory' => $options['working-directory'],
+                    'source' => $options['source'],
+                    'target' => $repository[1],
+                ]);
+            }
         }
 
         return 0;
