@@ -112,7 +112,7 @@ and push the branch to the remote.
 Patchbot uses a lean file structure to organize patches (see
 [skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/)).
 
-The directory `patches` contains a collection of all “patch directories“.
+The directory `patches` contains a collection of all your “patch directories“.
 
 Each patch directory always contains at least a PHP script named `patch.php`
 and a commit message named `commit-message.txt`. 
@@ -154,14 +154,16 @@ the repository `ssh://git@git.example.com/repository.git`:
 ./vendor/bin/patchbot patch --patch-name=template --repository-url=ssh://git@git.example.com/repository.git
 ```
 
-Example command to create the feature branch based on the branch `development`
-instead of the default main branch:
+**Custom options**
+
+To create the feature branch based on the branch `development`
+instead of the default main branch use this command:
 ```bash
 ./vendor/bin/patchbot patch --source-branch=development --patch-name=template --repository-url=https://git.example.com/repository
 ```
 
-Example command to use the custom name `feature-1337-add-license-file` for 
-the feature branch instead of a random name:
+Patchbot will use a random name for the feature branch. To use a custom name
+like `feature-1337-add-license-file` for the feature branch instead run:
 ```bash
 ./vendor/bin/patchbot patch --branch-name=feature-1337-add-license-file --patch-name=template --repository-url=https://git.example.com/repository
 ```
@@ -175,13 +177,14 @@ the commit is created, then use the `halt-before-commit` option:
 ```
 
 To be more verbose add `-v` to each command. Add `-vvv` for debugging.
+This will show all steps and commands applied by Patchbot.
 The flag `--no-ansi` will remove output formation.
 
 ### Merge feature branch
 
 ✨️Patchbot intentionally creates a feature branch to apply patches.
 
-When you reviewed the feature branch and all tests are successful then
+When you reviewed the feature branch and all CI tests are successful then
 you can use Patchbot again to merge the feature branch.
 
 Example command to merge branch `bugfix-add-missing-lock-file` into
@@ -215,11 +218,14 @@ repository, keep this in mind for file searches.
 
 ### Share a patch
 
-The patches created the patch directory are probably very specific to your
-organisation or domain. Since a motivation for this tool was to reuse
-migration scripts, you could share general-purpose scripts with others though.
+The patches created in the patch directory are probably very specific to your
+organisation or domain. So the best way to share the patches in your
+organisation is to share the patch project as Git repository.
 
-One possible way is to create a Gist for a single patch.
+However, since a motivation for this tool was to reuse migration scripts,
+you could share general-purpose scripts with others though.
+
+One possible way is to create a GitHub Gist for a single patch.
 
 Example command using the CLI gem [gist](https://github.com/defunkt/gist)
 to upload the `template` patch:
@@ -230,15 +236,15 @@ gist -d "Patchbot Patch »template« - Just a template without changes" patch.ph
 
 🔎 Search for [Gists with Patchbot tags](https://gist.github.com/search?l=PHP&q=%23patchbot).
 
-### Import a patch
+### Import a shared patch
 
 Copy & paste all files manually to import an existing patch from another source.
 
 If the source is a Git repository then a Git clone command is sufficient.
 
-Example command importing the Gist
-`https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745` as
-patch `add-editorconfig`:
+Example command importing the
+[Gist `https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745`](https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745)
+as patch `add-editorconfig`:
 ```bash
 git clone --depth=1 https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745 patches/add-editorconfig/
 rm -r patches/add-editorconfig/.git
