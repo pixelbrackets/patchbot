@@ -87,6 +87,11 @@ class PatchbotCommandsTest extends TestCase
                 'Missing arguments',
                 1,
                 'create',
+            ],
+            [
+                'Not enough arguments ',
+                1,
+                'batch',
             ]
         ];
     }

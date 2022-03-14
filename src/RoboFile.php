@@ -180,6 +180,58 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
+     * Run batch-mode commands
+     *
+     * @param string $batchCommand Name of command to run in batch mode (patch or merge, default: patch)
+     * @param array $options
+     * @option $working-directory Working directory to checkout repositories
+     * @option $patch-source-directory Source directory for all collected patches
+     * @option $patch-name Name of the directory where the patch code resides
+     * @option $branch-name Name of the feature branch to be created
+     * @option $halt-before-commit Pause before changes are commited, asks to continue
+     * @return int exit code
+     * @throws TaskException
+     */
+    public function batch(string $batchCommand, array $options = [
+        'working-directory|d' => null,
+        'patch-source-directory|s' => null,
+        'patch-name|p' => 'template',
+        'branch-name' => null,
+        'halt-before-commit' => false,
+    ]): int
+    {
+        $workingDirectory = getcwd();
+
+        if (false === is_file('repositories.csv')) {
+            $this->io()->error('Can not find file »repositories.csv«');
+            return 1;
+        }
+
+        $csvFileContent = file_get_contents('repositories.csv');
+        $repositories = str_getcsv($csvFileContent, PHP_EOL);
+        array_walk($repositories, static function (&$k) use ($repositories) {
+            $k = str_getcsv($k);
+        });
+        array_shift($repositories); // remove column header
+
+        foreach ($repositories as $repository) {
+            /** @noinspection DisconnectedForeachInstructionInspection */
+            chdir($workingDirectory); // reset working directory
+            $this->patch([
+                'repository-url' => $repository[0],
+                'working-directory' => $options['working-directory'],
+                'patch-source-directory' => $options['patch-source-directory'],
+                'patch-name' => $options['patch-name'],
+                'source-branch' => $repository[1],
+                'branch-name' => $options['branch-name'],
+                'halt-before-commit' => $options['halt-before-commit'],
+            ]);
+        }
+
+        return 0;
+    }
+
+    /**
      * Taskrunner steps to apply the patch
      *
      * @param array $options Options array passed from parent task
