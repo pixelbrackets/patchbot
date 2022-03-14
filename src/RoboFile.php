@@ -33,7 +33,7 @@ class RoboFile extends \Robo\Tasks
         'working-directory|d' => null,
         'patch-source-directory|s' => null,
         'patch-name|p' => 'template',
-        'source-branch' => 'master', // rename to main in next mayor release
+        'source-branch' => 'main',
         'branch-name' => null,
         'halt-before-commit' => false,
     ]): int

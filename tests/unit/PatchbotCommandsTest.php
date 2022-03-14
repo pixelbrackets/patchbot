@@ -30,11 +30,11 @@ class PatchbotCommandsTest extends TestCase
             exec('git clone ' . self::$bareRepository . ' ' . $tmpDirectory . ' 2> /dev/null');
             chdir($tmpDirectory);
             exec('git config --global user.email "patchbot@example.com" && git config --global user.name "Patchbot"');
-            exec('git checkout --orphan master 2> /dev/null');
+            exec('git checkout --orphan main 2> /dev/null');
             file_put_contents($tmpDirectory . 'README.md', '# ACME Project' . PHP_EOL . 'Hello World' . PHP_EOL . PHP_EOL);
             exec('git add -A');
             exec('git commit -a -m "Add README"');
-            exec('git push origin master 2> /dev/null');
+            exec('git push origin main 2> /dev/null');
         }
     }
 
