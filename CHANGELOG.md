@@ -1,5 +1,13 @@
 # Changelog
 
+2022-03-14 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 1.11.0
+  * BUGFIX Return error exit code for error
+  * FEATURE Recommend SSH protocol for checkouts
+  * FEATURE Clear result for merge command
+  * FEATURE Clear result for create command
+
 2022-02-07 Dan Untenzu <mail@pixelbrackets.de>
 
   * 1.10.0
