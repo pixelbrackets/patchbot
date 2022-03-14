@@ -2,6 +2,15 @@
 
 2022-03-14 Dan Untenzu <mail@pixelbrackets.de>
 
+  * 2.0.0
+  * FEATURE Add batch processing mode
+  * FEATURE Switch to main as default branch
+    * Breaking Change: The default branch to create a new branch upon is now
+      `main` instead of `master`. Use `--source-branch=master` to overwrite
+      the source branch if still needed.
+
+* 2022-03-14 Dan Untenzu <mail@pixelbrackets.de>
+
   * 1.11.0
   * BUGFIX Return error exit code for error
   * FEATURE Recommend SSH protocol for checkouts
