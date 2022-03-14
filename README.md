@@ -252,6 +252,46 @@ git clone --depth=1 https://gist.github.com/pixelbrackets/98664b79c788766e4248f1
 rm -r patches/add-editorconfig/.git
 ```
 
+### Batch processing
+
+To apply a patch to 1 or 20 repositories you may run the Patchbot script
+repeatedly with different URLs. To do this with 300 repos you may want
+to use the batch processing mode instead.
+
+This mode will trigger the `patch` or `merge` command for a list of
+repositories. The list is expected as CSV file named `repositories.csv`.
+
+*repositories.csv - Example file content*
+```csv
+repository-url,source-branch
+https://git.example.com/projecta,main
+https://git.example.com/projectb,main
+https://git.example.com/projectc,development
+```
+
+The `patch` subcommand allows all options of the `patch` command, except for
+`repository-url` and `source-branch`. Both are provided by the
+`repositories.csv` file instead.
+
+The following command will apply the patch script `update-changelog` to all
+repository URLs in the first column of the `repositories.csv` file and create
+the feature branch based on the name in the second column.
+
+```bash
+./vendor/bin/patchbot batch patch --patch-name=update-changelog
+```
+
+The `merge` subcommand also allows all options of the `merge` command,
+except for `repository-url` and `target`. Both are provided by the
+`repositories.csv` file instead.
+
+The next command will merge the feature branch `feature-add-phpcs-rules`
+into the branch name in the second column of the `repositories.csv` file and
+in all repositories of the first column:
+```bash
+./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules
+```
+
 ## License
 
 GNU General Public License version 2 or later
