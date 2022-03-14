@@ -184,6 +184,8 @@ class RoboFile extends \Robo\Tasks
      *
      * @param string $batchCommand Name of command to run in batch mode (patch or merge, default: patch)
      * @param array $options
+     * @option $repository-column Name of the repository column (fallback: first column in CSV)
+     * @option $branch-column Name of the branch column (fallback: second column in CSV)
      * @option $working-directory Working directory to check out repositories
      * @option $patch-source-directory Source directory for all collected patches
      * @option $patch-name Name of the directory where the patch code resides
@@ -194,6 +196,8 @@ class RoboFile extends \Robo\Tasks
      * @throws TaskException
      */
     public function batch(string $batchCommand, array $options = [
+        'repository-column' => null,
+        'branch-column' => null,
         'working-directory|d' => null,
         'patch-source-directory|s' => null,
         'patch-name|p' => 'template',
@@ -209,23 +213,24 @@ class RoboFile extends \Robo\Tasks
             return 1;
         }
 
+        // Parse CSV to array, with keys from header row
         $csvFileContent = file_get_contents('repositories.csv');
         $repositories = str_getcsv($csvFileContent, PHP_EOL);
-        array_walk($repositories, static function (&$k) use ($repositories) {
-            $k = str_getcsv($k);
+        $header = str_getcsv(array_shift($repositories)); // get & remove header
+        array_walk($repositories, static function (&$k) use ($repositories, $header) {
+            $k = array_combine($header, str_getcsv($k));
         });
-        array_shift($repositories); // remove column header
 
         if ($batchCommand === 'patch') {
             foreach ($repositories as $repository) {
                 /** @noinspection DisconnectedForeachInstructionInspection */
                 chdir($workingDirectory); // reset working directory
                 $this->patch([
-                    'repository-url' => $repository[0],
+                    'repository-url' => $repository[$options['repository-column']] ?? array_values($repository)[0],
                     'working-directory' => $options['working-directory'],
                     'patch-source-directory' => $options['patch-source-directory'],
                     'patch-name' => $options['patch-name'],
-                    'source-branch' => $repository[1],
+                    'source-branch' => $repository[$options['branch-column']] ?? array_values($repository)[1],
                     'branch-name' => $options['branch-name'],
                     'halt-before-commit' => $options['halt-before-commit'],
                 ]);
@@ -236,10 +241,10 @@ class RoboFile extends \Robo\Tasks
                 /** @noinspection DisconnectedForeachInstructionInspection */
                 chdir($workingDirectory); // reset working directory
                 $this->merge([
-                    'repository-url' => $repository[0],
+                    'repository-url' => $repository[$options['repository-column']] ?? array_values($repository)[0],
                     'working-directory' => $options['working-directory'],
                     'source' => $options['source'],
-                    'target' => $repository[1],
+                    'target' => $repository[$options['branch-column']] ?? array_values($repository)[1],
                 ]);
             }
         }

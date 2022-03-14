@@ -261,9 +261,9 @@ to use the batch processing mode instead.
 This mode will trigger the `patch` or `merge` command for a list of
 repositories. The list is expected as CSV file named `repositories.csv`.
 
-*repositories.csv - Example file content*
+*repositories.csv - Example file content, with repository & branch to use*
 ```csv
-repository-url,source-branch
+repository-url,main-branch
 https://git.example.com/projecta,main
 https://git.example.com/projectb,main
 https://git.example.com/projectc,development
@@ -290,6 +290,34 @@ into the branch name in the second column of the `repositories.csv` file and
 in all repositories of the first column:
 ```bash
 ./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules
+```
+
+**Different branch names**
+
+When the branch names used in the `patch` and `merge` subcommand differ,
+or when you need to merge the feature branch into several stage branches
+you may provide a file with all branches and pass the name of the designated
+branch column as option `branch-column`.
+
+*repositories.csv - Example file content with many branch columns*
+```csv
+repository-url,main,development,integration-stage,test-stage
+https://git.example.com/projecta,main,development,integration,testing
+https://git.example.com/projectb,main,dev,stage/integration,stage/test
+https://git.example.com/projectc,live,development,stage/integration,stage/test
+```
+
+Apply the patch `rename-changelog` to the feature branch
+`feature-rename-changelog`, which is based on branch name given in column
+`development`:
+```bash
+./vendor/bin/patchbot batch patch --branch-column=development patch-name=rename-changelog branch-name=feature-rename-changelog
+```
+Now merge the feature branch into the branch name given in column `test-stage`
+and then into the of given in column `integration-stage`:
+```bash
+./vendor/bin/patchbot batch merge --branch-column=test-stage source=feature-rename-changelog
+./vendor/bin/patchbot batch merge --branch-column=integration-stage source=feature-rename-changelog
 ```
 
 ## License
