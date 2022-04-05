@@ -71,10 +71,10 @@ class RoboFile extends \Robo\Tasks
 
         $this->io()->success('Patch applied');
         // Suggest next steps
-        $this->io()->block('Hint: Run `./vendor/bin/patchbot merge'
-        . ' --source=' . $options['branch-name']
-        . ' --target=<target branch>'
-        . ' --repository-url=' . $options['repository-url'] . '` to merge the feature branch');
+        $this->say('Hint: Run `./vendor/bin/patchbot merge'
+            . ' --source=' . $options['branch-name']
+            . ' --target=<target branch>'
+            . ' --repository-url=' . $options['repository-url'] . '` to merge the feature branch');
 
         return 0;
     }
@@ -171,6 +171,7 @@ class RoboFile extends \Robo\Tasks
             ->run();
 
         $this->io()->success('Patch directory created');
+        // Suggest next steps
         $this->say('- Edit patch.php & commit-message.txt in ' . $patchDirectory);
         $this->say('- Run `./vendor/bin/patchbot patch --patch-name='
             . $patchName
