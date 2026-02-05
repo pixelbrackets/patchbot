@@ -337,6 +337,17 @@ Use `--filter` to process only matching repositories:
 ./vendor/bin/patchbot batch patch --patch-name=X --filter="path:my-org/*" --filter="topic:php"
 ```
 
+#### Create merge requests
+
+Use `--create-mr` to automatically create GitLab merge requests after pushing:
+
+```bash
+./vendor/bin/patchbot patch --create-mr --patch-name=template --repository-url=git@gitlab.com:user/repo.git
+./vendor/bin/patchbot batch patch --create-mr --patch-name=template
+```
+
+Requires `GITLAB_TOKEN` environment variable.
+
 #### Dry run
 
 Use `--dry-run` to preview what would happen without making any changes:

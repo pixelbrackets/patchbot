@@ -27,6 +27,7 @@ class RoboFile extends \Robo\Tasks
      * @option $branch-name Name of the feature branch to be created
      * @option $halt-before-commit Pause before changes are committed, asks to continue
      * @option $dry-run Show what would be done without executing
+     * @option $create-mr Create GitLab merge request after pushing
      * @return int exit code
      * @throws TaskException
      */
@@ -39,6 +40,7 @@ class RoboFile extends \Robo\Tasks
         'branch-name' => null,
         'halt-before-commit' => false,
         'dry-run' => false,
+        'create-mr' => false,
     ]): int
     {
         if (empty($options['repository-url'])) {
@@ -64,6 +66,9 @@ class RoboFile extends \Robo\Tasks
             $this->io()->text('[DRY-RUN] Would clone repository and create branch');
             $this->io()->text('[DRY-RUN] Would run patch script: ' . $options['patch-source-directory'] . $options['patch-name'] . '/patch.php');
             $this->io()->text('[DRY-RUN] Would commit and push changes');
+            if ($options['create-mr']) {
+                $this->io()->text('[DRY-RUN] Would create merge request');
+            }
             return 0;
         }
 
@@ -80,11 +85,26 @@ class RoboFile extends \Robo\Tasks
         }
 
         $this->io()->success('Patch applied');
-        // Suggest next steps
-        $this->say('Hint: Run `./vendor/bin/patchbot merge'
-            . ' --source=' . $options['branch-name']
-            . ' --target=<target branch>'
-            . ' --repository-url=' . $options['repository-url'] . '` to merge the feature branch');
+
+        // Create merge request if requested
+        if ($options['create-mr']) {
+            $commitMessage = file_get_contents($options['patch-source-directory'] . $options['patch-name'] . '/commit-message.txt');
+            $mrUrl = $this->createMergeRequest(
+                $options['repository-url'],
+                $options['branch-name'],
+                $options['source-branch'],
+                $commitMessage
+            );
+            if ($mrUrl) {
+                $this->io()->success('Merge request created: ' . $mrUrl);
+            }
+        } else {
+            // Suggest next steps
+            $this->say('Hint: Run `./vendor/bin/patchbot merge'
+                . ' --source=' . $options['branch-name']
+                . ' --target=<target branch>'
+                . ' --repository-url=' . $options['repository-url'] . '` to merge the feature branch');
+        }
 
         return 0;
     }
@@ -303,6 +323,7 @@ class RoboFile extends \Robo\Tasks
      * @option $source Source branch name for merge (e.g. feature branch)
      * @option $dry-run Show what would be done without executing
      * @option $filter Filter repositories (path:pattern or topic:tag, can be used multiple times)
+     * @option $create-mr Create GitLab merge request after pushing
      * @return int exit code
      * @throws TaskException
      */
@@ -315,6 +336,7 @@ class RoboFile extends \Robo\Tasks
         'source' => null,
         'dry-run' => false,
         'filter' => [],
+        'create-mr' => false,
     ]): int
     {
         $workingDirectory = getcwd();
@@ -361,9 +383,16 @@ class RoboFile extends \Robo\Tasks
         $results = ['success' => 0, 'skipped' => 0, 'failed' => 0];
 
         if ($batchCommand === 'patch') {
+            $patchSourceDirectory = ($options['patch-source-directory'] ?? getcwd() . '/patches') . '/';
+            $branchName = $options['branch-name'] ?? date('Ymd') . '_patchbot_' . uniqid();
+
             foreach ($repositories as $repository) {
                 if ($isDryRun) {
-                    $this->io()->text('[DRY-RUN] Would patch: ' . $repository['path_with_namespace'] . ' (' . $repository['default_branch'] . ')');
+                    $dryRunMsg = '[DRY-RUN] Would patch: ' . $repository['path_with_namespace'] . ' (' . $repository['default_branch'] . ')';
+                    if ($options['create-mr']) {
+                        $dryRunMsg .= ' and create MR';
+                    }
+                    $this->io()->text($dryRunMsg);
                     continue;
                 }
                 chdir($workingDirectory); // reset working directory
@@ -371,15 +400,29 @@ class RoboFile extends \Robo\Tasks
                     $result = $this->runPatch([
                         'repository-url' => $repository['clone_url_ssh'],
                         'working-directory' => $options['working-directory'] ?? $this->getTemporaryDirectory(),
-                        'patch-source-directory' => ($options['patch-source-directory'] ?? getcwd() . '/patches') . '/',
+                        'patch-source-directory' => $patchSourceDirectory,
                         'patch-name' => $options['patch-name'],
                         'source-branch' => $repository['default_branch'],
-                        'branch-name' => $options['branch-name'] ?? date('Ymd') . '_patchbot_' . uniqid(),
+                        'branch-name' => $branchName,
                         'halt-before-commit' => $options['halt-before-commit'],
                     ]);
                     if ($result) {
                         $results['success']++;
                         $this->io()->success('Patched: ' . $repository['path_with_namespace']);
+
+                        // Create merge request if requested
+                        if ($options['create-mr']) {
+                            $commitMessage = file_get_contents($patchSourceDirectory . $options['patch-name'] . '/commit-message.txt');
+                            $mrUrl = $this->createMergeRequest(
+                                $repository['clone_url_ssh'],
+                                $branchName,
+                                $repository['default_branch'],
+                                $commitMessage
+                            );
+                            if ($mrUrl) {
+                                $this->io()->text('  MR: ' . $mrUrl);
+                            }
+                        }
                     } else {
                         $results['skipped']++;
                         $this->io()->text('Skipped: ' . $repository['path_with_namespace'] . ' (no changes)');
@@ -676,5 +719,88 @@ class RoboFile extends \Robo\Tasks
         }
 
         return array_values($repositories);
+    }
+
+    /**
+     * Create a GitLab merge request
+     *
+     * @param string $repositoryUrl Repository URL (SSH or HTTPS)
+     * @param string $sourceBranch Feature branch name
+     * @param string $targetBranch Target branch name
+     * @param string $commitMessage Commit message (first line used as title)
+     * @return string|null MR URL on success, null on failure
+     */
+    protected function createMergeRequest(
+        string $repositoryUrl,
+        string $sourceBranch,
+        string $targetBranch,
+        string $commitMessage
+    ): ?string {
+        $token = getenv('GITLAB_TOKEN');
+        if (empty($token)) {
+            $this->io()->warning('Cannot create MR: GITLAB_TOKEN not set');
+            return null;
+        }
+
+        $gitlabUrl = getenv('GITLAB_URL') ?: 'https://gitlab.com';
+        $projectPath = $this->extractProjectPath($repositoryUrl);
+
+        if (empty($projectPath)) {
+            $this->io()->warning('Cannot create MR: unable to extract project path from URL');
+            return null;
+        }
+
+        // First line of commit message is title, rest is description
+        $lines = explode("\n", trim($commitMessage));
+        $title = $lines[0];
+        $description = count($lines) > 1 ? implode("\n", array_slice($lines, 1)) : '';
+
+        $this->say('Creating merge request for ' . $projectPath);
+
+        try {
+            $client = new \GuzzleHttp\Client([
+                'base_uri' => rtrim($gitlabUrl, '/'),
+                'headers' => [
+                    'PRIVATE-TOKEN' => $token,
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            $response = $client->post('/api/v4/projects/' . urlencode($projectPath) . '/merge_requests', [
+                'json' => [
+                    'source_branch' => $sourceBranch,
+                    'target_branch' => $targetBranch,
+                    'title' => $title,
+                    'description' => $description,
+                ],
+            ]);
+
+            $data = json_decode($response->getBody()->getContents(), true);
+            return $data['web_url'] ?? null;
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $this->io()->error('Failed to create MR: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Extract project path from repository URL
+     *
+     * @param string $url Repository URL (SSH or HTTPS)
+     * @return string|null Project path (e.g., "user/repo")
+     */
+    protected function extractProjectPath(string $url): ?string
+    {
+        // SSH format: git@gitlab.com:user/repo.git
+        if (preg_match('/^git@[^:]+:(.+?)(?:\.git)?$/', $url, $matches)) {
+            return $matches[1];
+        }
+
+        // HTTPS format: https://gitlab.com/user/repo.git
+        if (preg_match('/^https?:\/\/[^\/]+\/(.+?)(?:\.git)?$/', $url, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
     }
 }
