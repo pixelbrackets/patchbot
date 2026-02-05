@@ -1,49 +1,30 @@
 <?php
 
-#namespace Pixelbrackets\Patchbot;
-
 use Symfony\Component\Console\Output\BufferedOutput;
 
 trait CommandTesterTrait
 {
-    /** @var string */
-    protected $appName;
+    protected string $appName;
 
-    /** @var string */
-    protected $appVersion;
+    protected string $appVersion;
 
     /**
      * Instantiate a new runner
      */
-    public function setupCommandTester($appName, $appVersion)
+    public function setupCommandTester(string $appName, string $appVersion): void
     {
         $this->appName = $appName;
         $this->appVersion = $appVersion;
     }
 
     /**
-     * Helper method to set up the $argv array for Robo:
-     * <app name> <command> <command options>
-     *
-     * @param array $functionParameters All test method arguments
-     * @param int $leadingParameterCount The number of method argumnents
-     *   to ignore in this helper - 2 by default
-     *   (first argument = expected content, second argument = expected
-     *   status code, all following arguments = argv).
-     */
-    protected function argv($functionParameters, $leadingParameterCount = 2)
-    {
-        $argv = $functionParameters;
-        $argv = array_slice($argv, $leadingParameterCount);
-        array_unshift($argv, $this->appName);
-
-        return $argv;
-    }
-
-    /**
      * Simulated Robo task runner execution
+     *
+     * @param string[] $argv
+     * @param string[] $commandClass
+     * @return array{0: string, 1: int}
      */
-    protected function execute($argv, $commandClass)
+    protected function execute(array $argv, array $commandClass): array
     {
         // Buffer CLI output for tests
         $output = new BufferedOutput();

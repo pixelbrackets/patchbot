@@ -2,6 +2,7 @@
 
 use Pixelbrackets\Patchbot\RoboFile;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 require __DIR__ . '/src/CommandTesterTrait.php';
 
@@ -10,9 +11,9 @@ class PatchbotCommandsTest extends TestCase
     use CommandTesterTrait;
 
     /** @var string[] */
-    protected $commandClass;
+    protected array $commandClass;
 
-    protected static $bareRepository = '';
+    protected static string $bareRepository = '';
 
     /**
      * Set up a bare local Git repository
@@ -29,7 +30,7 @@ class PatchbotCommandsTest extends TestCase
             exec('git init --bare ' . self::$bareRepository);
             exec('git clone ' . self::$bareRepository . ' ' . $tmpDirectory . ' 2> /dev/null');
             chdir($tmpDirectory);
-            exec('git config --global user.email "patchbot@example.com" && git config --global user.name "Patchbot"');
+            exec('git config user.email "patchbot@example.com" && git config user.name "Patchbot"');
             exec('git checkout --orphan main 2> /dev/null');
             file_put_contents($tmpDirectory . 'README.md', '# ACME Project' . PHP_EOL . 'Hello World' . PHP_EOL . PHP_EOL);
             exec('git add -A');
@@ -58,9 +59,9 @@ class PatchbotCommandsTest extends TestCase
     }
 
     /**
-     * Data provider for testExampleCommands.
+     * Data provider for testGeneralCommands.
      */
-    public function generalCommandsProvider(): array
+    public static function generalCommandsProvider(): array
     {
         return [
             [
@@ -96,13 +97,11 @@ class PatchbotCommandsTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider generalCommandsProvider
-     */
-    public function testGeneralCommands($expectedOutput, $expectedStatus, $CliArguments): void
+    #[DataProvider('generalCommandsProvider')]
+    public function testGeneralCommands(string $expectedOutput, int $expectedStatus, string ...$cliArguments): void
     {
         // Create Robo arguments and execute a runner instance
-        $argv = $this->argv(func_get_args());
+        $argv = array_merge([$this->appName], $cliArguments);
         list($actualOutput, $statusCode) = $this->execute($argv, $this->commandClass);
 
         // Confirm that our output and status code match expectations
@@ -113,7 +112,7 @@ class PatchbotCommandsTest extends TestCase
     /**
      * Data provider for testPatchCommandWarning.
      */
-    public function patchCommandWarningProvider(): array
+    public static function patchCommandWarningProvider(): array
     {
         self::loadFixtures();
 
@@ -136,13 +135,11 @@ class PatchbotCommandsTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider patchCommandWarningProvider
-     */
-    public function testPatchCommandWarning($expectedOutput, $expectedStatus, $CliArguments): void
+    #[DataProvider('patchCommandWarningProvider')]
+    public function testPatchCommandWarning(string $expectedOutput, int $expectedStatus, string ...$cliArguments): void
     {
         // Create Robo arguments and execute a runner instance
-        $argv = $this->argv(func_get_args());
+        $argv = array_merge([$this->appName], $cliArguments);
         list($actualOutput, $statusCode) = $this->execute($argv, $this->commandClass);
 
         $this->assertStringContainsString($expectedOutput, $actualOutput);

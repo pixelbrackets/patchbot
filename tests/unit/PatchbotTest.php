@@ -8,11 +8,11 @@ class PatchbotTest extends TestCase
     protected function setUp(): void
     {
         \Robo\Robo::unsetContainer();
-        $container = \Robo\Robo::createDefaultContainer();
+        $container = \Robo\Robo::createContainer();
         \Robo\Robo::setContainer($container);
     }
 
-    public function testPatchRequiresRepositoryUrl()
+    public function testPatchRequiresRepositoryUrl(): void
     {
         $patchbot = new RoboFile();
         $expectedOutput = 1; // exit code 1 = error

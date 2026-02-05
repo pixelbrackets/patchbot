@@ -1,9 +1,12 @@
 ### GENERAL ###
 
-image: chialab/php:7.2-apache
+variables:
+  PHP_VERSION: '8.4'
+
+image: php:${PHP_VERSION}-cli-alpine
 
 cache:
-  key: ${CI_COMMIT_REF_SLUG}
+  key: ${CI_COMMIT_REF_SLUG}-${PHP_VERSION}
   paths:
     - vendor/
 
@@ -12,25 +15,36 @@ stages:
   - test
 
 before_script:
-  - apt-get update -yqq
-  - apt-get install curl ssh rsync git -yqq
+  - apk add --no-cache curl git unzip
+  - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
   - composer install
 
 ### JOBS ###
 
-job_lint_app_phpdefaultversion: &definition_lint_app_phpdefaultversion
+job_lint_app:
   stage: lint
+  image: php:${PHP_VERSION}-cli-alpine
+  parallel:
+    matrix:
+      - PHP_VERSION: ['8.3', '8.4', '8.5']
   script:
-    - composer require --dev friendsofphp/php-cs-fixer:^2.0 jakub-onderka/php-parallel-lint:^1.0
+    - composer require --dev friendsofphp/php-cs-fixer:^3.0 php-parallel-lint/php-parallel-lint:^1.0
     - vendor/bin/php-cs-fixer -vvv fix . --dry-run --diff --using-cache=no --rules=@PSR2
     - vendor/bin/parallel-lint --exclude vendor .
-
-job_lint_app_phpnextversion:
-  <<: *definition_lint_app_phpdefaultversion
-  image: chialab/php:7.3-apache
-  allow_failure: true
+  rules:
+    - if: $PHP_VERSION == "8.5"
+      allow_failure: true
+    - when: always
 
 job_test_app:
   stage: test
+  image: php:${PHP_VERSION}-cli-alpine
+  parallel:
+    matrix:
+      - PHP_VERSION: ['8.3', '8.4', '8.5']
   script:
     - composer test
+  rules:
+    - if: $PHP_VERSION == "8.5"
+      allow_failure: true
+    - when: always
