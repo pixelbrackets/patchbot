@@ -328,6 +328,16 @@ Use `--dry-run` to preview what would happen without making any changes:
 ./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules --dry-run
 ```
 
+After batch processing completes, a summary shows the results:
+
+```
+Summary
+10 repositories processed
+  ✓ 7 patched
+  - 2 skipped (no changes)
+  ✗ 1 failed
+```
+
 ## License
 
 GNU General Public License version 2 or later

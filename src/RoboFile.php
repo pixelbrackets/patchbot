@@ -345,6 +345,8 @@ class RoboFile extends \Robo\Tasks
             $this->io()->section('Dry Run');
         }
 
+        $results = ['success' => 0, 'skipped' => 0, 'failed' => 0];
+
         if ($batchCommand === 'patch') {
             foreach ($repositories as $repository) {
                 if ($isDryRun) {
@@ -352,15 +354,27 @@ class RoboFile extends \Robo\Tasks
                     continue;
                 }
                 chdir($workingDirectory); // reset working directory
-                $this->patch([
-                    'repository-url' => $repository['clone_url_ssh'],
-                    'working-directory' => $options['working-directory'],
-                    'patch-source-directory' => $options['patch-source-directory'],
-                    'patch-name' => $options['patch-name'],
-                    'source-branch' => $repository['default_branch'],
-                    'branch-name' => $options['branch-name'],
-                    'halt-before-commit' => $options['halt-before-commit'],
-                ]);
+                try {
+                    $result = $this->runPatch([
+                        'repository-url' => $repository['clone_url_ssh'],
+                        'working-directory' => $options['working-directory'] ?? $this->getTemporaryDirectory(),
+                        'patch-source-directory' => ($options['patch-source-directory'] ?? getcwd() . '/patches') . '/',
+                        'patch-name' => $options['patch-name'],
+                        'source-branch' => $repository['default_branch'],
+                        'branch-name' => $options['branch-name'] ?? date('Ymd') . '_patchbot_' . uniqid(),
+                        'halt-before-commit' => $options['halt-before-commit'],
+                    ]);
+                    if ($result) {
+                        $results['success']++;
+                        $this->io()->success('Patched: ' . $repository['path_with_namespace']);
+                    } else {
+                        $results['skipped']++;
+                        $this->io()->text('Skipped: ' . $repository['path_with_namespace'] . ' (no changes)');
+                    }
+                } catch (\Exception $e) {
+                    $results['failed']++;
+                    $this->io()->error('Failed: ' . $repository['path_with_namespace'] . ' - ' . $e->getMessage());
+                }
             }
         }
 
@@ -371,21 +385,47 @@ class RoboFile extends \Robo\Tasks
                     continue;
                 }
                 chdir($workingDirectory); // reset working directory
-                $this->merge([
-                    'repository-url' => $repository['clone_url_ssh'],
-                    'working-directory' => $options['working-directory'],
-                    'source' => $options['source'],
-                    'target' => $repository['default_branch'],
-                ]);
+                try {
+                    $result = $this->runMerge([
+                        'repository-url' => $repository['clone_url_ssh'],
+                        'working-directory' => $options['working-directory'] ?? $this->getTemporaryDirectory(),
+                        'source' => $options['source'],
+                        'target' => $repository['default_branch'],
+                    ]);
+                    if ($result) {
+                        $results['success']++;
+                        $this->io()->success('Merged: ' . $repository['path_with_namespace']);
+                    } else {
+                        $results['skipped']++;
+                        $this->io()->text('Skipped: ' . $repository['path_with_namespace'] . ' (already up-to-date)');
+                    }
+                } catch (\Exception $e) {
+                    $results['failed']++;
+                    $this->io()->error('Failed: ' . $repository['path_with_namespace'] . ' - ' . $e->getMessage());
+                }
             }
         }
 
+        // Print summary
+        $this->io()->newLine();
         if ($isDryRun) {
-            $this->io()->newLine();
             $this->io()->text(count($repositories) . ' repositories would be processed');
+        } else {
+            $total = $results['success'] + $results['skipped'] + $results['failed'];
+            $this->io()->section('Summary');
+            $this->io()->text($total . ' repositories processed');
+            if ($results['success'] > 0) {
+                $this->io()->text('  ✓ ' . $results['success'] . ' ' . ($batchCommand === 'patch' ? 'patched' : 'merged'));
+            }
+            if ($results['skipped'] > 0) {
+                $this->io()->text('  - ' . $results['skipped'] . ' skipped (no changes)');
+            }
+            if ($results['failed'] > 0) {
+                $this->io()->text('  ✗ ' . $results['failed'] . ' failed');
+            }
         }
 
-        return 0;
+        return $results['failed'] > 0 ? 1 : 0;
     }
 
     /**
