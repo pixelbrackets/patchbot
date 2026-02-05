@@ -559,6 +559,15 @@ class RoboFile extends \Robo\Tasks
             }
         }
 
+        // Configure Git user if set in environment
+        $botGitName = getenv('BOT_GIT_NAME');
+        $botGitEmail = getenv('BOT_GIT_EMAIL');
+        if (!empty($botGitName) && !empty($botGitEmail)) {
+            $this->say('Configure Git user: ' . $botGitName . ' <' . $botGitEmail . '>');
+            shell_exec('git config user.name ' . escapeshellarg($botGitName));
+            shell_exec('git config user.email ' . escapeshellarg($botGitEmail));
+        }
+
         // Commit changes
         $this->say('Commit changes');
         $commitMessage = file_get_contents($options['patch-source-directory'] . $options['patch-name'] . '/commit-message.txt');

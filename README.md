@@ -357,6 +357,17 @@ Use `--dry-run` to preview what would happen without making any changes:
 ./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules --dry-run
 ```
 
+#### Custom Git user
+
+By default, commits use your system Git config. To use a different identity
+(e.g., a bot user), set these environment variables:
+
+```bash
+# In .env or shell
+BOT_GIT_NAME="Patchbot"
+BOT_GIT_EMAIL="patchbot@example.com"
+```
+
 #### GitLab CI
 
 Run Patchbot via GitLab CI instead of locally:
