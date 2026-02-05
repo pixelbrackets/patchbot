@@ -285,6 +285,8 @@ to use the batch processing mode instead.
 This mode will trigger the `patch` or `merge` command for a list of
 repositories. The list is stored in a JSON file named `repositories.json`.
 
+After batch processing completes, a summary shows the results.
+
 #### Discover repositories
 
 Use the `discover` command to automatically fetch all repositories from a
@@ -319,6 +321,22 @@ for all repositories:
 ./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules
 ```
 
+#### Filter repositories
+
+Use `--filter` to process only matching repositories:
+
+```bash
+# Filter by path pattern (glob syntax)
+./vendor/bin/patchbot batch patch --patch-name=X --filter="path:my-org/*"
+./vendor/bin/patchbot batch patch --patch-name=X --filter="path:*/typo3-*"
+
+# Filter by GitLab topic
+./vendor/bin/patchbot batch patch --patch-name=X --filter="topic:php"
+
+# Combine multiple filters (AND logic)
+./vendor/bin/patchbot batch patch --patch-name=X --filter="path:my-org/*" --filter="topic:php"
+```
+
 #### Dry run
 
 Use `--dry-run` to preview what would happen without making any changes:
@@ -326,16 +344,6 @@ Use `--dry-run` to preview what would happen without making any changes:
 ```bash
 ./vendor/bin/patchbot batch patch --patch-name=update-changelog --dry-run
 ./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules --dry-run
-```
-
-After batch processing completes, a summary shows the results:
-
-```
-Summary
-10 repositories processed
-  ✓ 7 patched
-  - 2 skipped (no changes)
-  ✗ 1 failed
 ```
 
 ## License

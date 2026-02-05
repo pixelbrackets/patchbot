@@ -132,6 +132,7 @@ class GitLabDiscovery
                     'clone_url_ssh' => $project['ssh_url_to_repo'],
                     'clone_url_http' => $project['http_url_to_repo'],
                     'default_branch' => $project['default_branch'] ?? 'main',
+                    'topics' => $project['topics'] ?? [],
                 ];
             }
 

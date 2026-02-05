@@ -302,6 +302,7 @@ class RoboFile extends \Robo\Tasks
      * @option $halt-before-commit Pause before changes are committed, asks to continue
      * @option $source Source branch name for merge (e.g. feature branch)
      * @option $dry-run Show what would be done without executing
+     * @option $filter Filter repositories (path:pattern or topic:tag, can be used multiple times)
      * @return int exit code
      * @throws TaskException
      */
@@ -313,6 +314,7 @@ class RoboFile extends \Robo\Tasks
         'halt-before-commit' => false,
         'source' => null,
         'dry-run' => false,
+        'filter' => [],
     ]): int
     {
         $workingDirectory = getcwd();
@@ -337,6 +339,17 @@ class RoboFile extends \Robo\Tasks
         if (empty($repositories)) {
             $this->io()->warning('No repositories found in ' . $configFile);
             return 0;
+        }
+
+        // Apply filters
+        $filters = is_array($options['filter']) ? $options['filter'] : [$options['filter']];
+        $filters = array_filter($filters); // remove empty values
+        if (!empty($filters)) {
+            $repositories = $this->filterRepositories($repositories, $filters);
+            if (empty($repositories)) {
+                $this->io()->warning('No repositories match the filter criteria');
+                return 0;
+            }
         }
 
         $isDryRun = $options['dry-run'];
@@ -632,5 +645,36 @@ class RoboFile extends \Robo\Tasks
         if ($this->io()->isVerbose()) {
             parent::say($text);
         }
+    }
+
+    /**
+     * Filter repositories based on filter expressions
+     *
+     * @param array $repositories List of repositories
+     * @param array $filters Filter expressions (path:pattern or topic:tag)
+     * @return array Filtered repositories
+     */
+    protected function filterRepositories(array $repositories, array $filters): array
+    {
+        foreach ($filters as $filter) {
+            if (!str_contains($filter, ':')) {
+                $this->io()->warning('Invalid filter format: ' . $filter . ' (expected path:pattern or topic:tag)');
+                continue;
+            }
+
+            [$type, $value] = explode(':', $filter, 2);
+
+            $repositories = match ($type) {
+                'path' => array_filter($repositories, fn($repo) => fnmatch($value, $repo['path_with_namespace'])),
+                'topic' => array_filter($repositories, fn($repo) => in_array($value, $repo['topics'] ?? [])),
+                default => $repositories,
+            };
+
+            if ($type !== 'path' && $type !== 'topic') {
+                $this->io()->warning('Unknown filter type: ' . $type . ' (supported: path, topic)');
+            }
+        }
+
+        return array_values($repositories);
     }
 }
