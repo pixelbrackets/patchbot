@@ -346,6 +346,14 @@ Use `--dry-run` to preview what would happen without making any changes:
 ./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules --dry-run
 ```
 
+#### GitLab CI
+
+Run Patchbot via GitLab CI instead of locally:
+
+1. Copy `.gitlab-ci.example.yml` to `.gitlab-ci.yml` in your config repository
+2. Set CI/CD variables: `GITLAB_TOKEN`, `GITLAB_NAMESPACE`
+3. Trigger manually via GitLab UI (CI/CD > Pipelines > Run pipeline)
+
 ## License
 
 GNU General Public License version 2 or later

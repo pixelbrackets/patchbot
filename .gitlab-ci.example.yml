@@ -1,0 +1,34 @@
+# Example GitLab CI configuration for Patchbot
+#
+# Setup:
+# 1. Copy this file to .gitlab-ci.yml in your patchbot config repository
+# 2. Set CI/CD variables: GITLAB_TOKEN, GITLAB_NAMESPACE
+# 3. Trigger manually via GitLab UI (CI/CD > Pipelines > Run pipeline)
+#
+# Note: Scheduled runs require idempotency tracking (not yet implemented).
+# For now, trigger manually when you want to apply a patch.
+
+stages:
+  - patch
+
+variables:
+  PATCH_NAME: "template"
+  # Optional: filter repositories
+  # FILTER: "--filter=path:my-org/* --filter=topic:php"
+
+patchbot:
+  stage: patch
+  image: php:8.3-cli
+  before_script:
+    - apt-get update && apt-get install -y git unzip
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install --no-interaction --prefer-dist
+    # Configure Git for commits
+    - git config --global user.email "patchbot@example.com"
+    - git config --global user.name "Patchbot"
+  script:
+    - test -f repositories.json || ./vendor/bin/patchbot discover
+    - ./vendor/bin/patchbot batch patch --patch-name=$PATCH_NAME $FILTER
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
