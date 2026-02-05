@@ -195,6 +195,12 @@ To be more verbose add `-v` to each command. Add `-vvv` for debugging.
 This will show all steps and commands applied by Patchbot.
 The flag `--no-ansi` will remove output formation.
 
+Use `--dry-run` to preview what would happen without making any changes:
+
+```bash
+./vendor/bin/patchbot patch --dry-run --patch-name=template --repository-url=https://git.example.com/repository
+```
+
 ### Merge feature branch
 
 ✨️Patchbot intentionally creates a feature branch to apply patches.
@@ -206,6 +212,11 @@ Example command to merge branch `bugfix-add-missing-lock-file` into
 branch `main` in repository `https://git.example.com/repository`:
 ```bash
 ./vendor/bin/patchbot merge --source=bugfix-add-missing-lock-file --target=main --repository-url=https://git.example.com/repository
+```
+
+Use `--dry-run` to preview without executing:
+```bash
+./vendor/bin/patchbot merge --dry-run --source=bugfix-add-missing-lock-file --target=main --repository-url=https://git.example.com/repository
 ```
 
 ### Add a new patch
@@ -272,65 +283,49 @@ repeatedly with different URLs. To do this with 300 repos you may want
 to use the batch processing mode instead.
 
 This mode will trigger the `patch` or `merge` command for a list of
-repositories. The list is expected as CSV file named `repositories.csv`.
+repositories. The list is stored in a JSON file named `repositories.json`.
 
-*repositories.csv - Example file content, with repository & branch to use*
-```csv
-repository-url,main-branch
-https://git.example.com/projecta,main
-https://git.example.com/projectb,main
-https://git.example.com/projectc,development
+#### Discover repositories
+
+Use the `discover` command to automatically fetch all repositories from a
+GitLab namespace (group or user):
+
+```bash
+# Set up your GitLab token in .env
+cp .env.example .env
+# Edit .env with your GITLAB_TOKEN and GITLAB_NAMESPACE
+
+# Discover repositories
+./vendor/bin/patchbot discover
 ```
 
-The `patch` subcommand allows all options of the `patch` command, except for
-`repository-url` and `source-branch`. Both are provided by the
-`repositories.csv` file instead.
+This creates a `repositories.json` file with all discovered repositories,
+including their clone URLs and default branches.
 
-The following command will apply the patch script `update-changelog` to all
-repository URLs in the first column of the `repositories.csv` file and create
-the feature branch based on the name in the second column.
+#### Apply patches
+
+The `patch` subcommand applies a patch to all repositories in `repositories.json`:
 
 ```bash
 ./vendor/bin/patchbot batch patch --patch-name=update-changelog
 ```
 
-The `merge` subcommand also allows all options of the `merge` command,
-except for `repository-url` and `target`. Both are provided by the
-`repositories.csv` file instead.
+#### Merge feature branches
 
-The next command will merge the feature branch `feature-add-phpcs-rules`
-into the branch name in the second column of the `repositories.csv` file and
-in all repositories of the first column:
+The `merge` subcommand merges a feature branch into the default branch
+for all repositories:
+
 ```bash
 ./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules
 ```
 
-**Different branch names**
+#### Dry run
 
-When the branch names used in the `patch` and `merge` subcommand differ,
-or when you need to merge the feature branch into several stage branches
-you may provide a file with all branches and pass the name of the designated
-branch column as option `branch-column`.
+Use `--dry-run` to preview what would happen without making any changes:
 
-*repositories.csv - Example file content with many branch columns*
-```csv
-repository-url,main,development,integration-stage,test-stage
-https://git.example.com/projecta,main,development,integration,testing
-https://git.example.com/projectb,main,dev,stage/integration,stage/test
-https://git.example.com/projectc,live,development,stage/integration,stage/test
-```
-
-Apply the patch `rename-changelog` to the feature branch
-`feature-rename-changelog`, which is based on branch name given in column
-`development`:
 ```bash
-./vendor/bin/patchbot batch patch --branch-column=development patch-name=rename-changelog branch-name=feature-rename-changelog
-```
-Now merge the feature branch into the branch name given in column `test-stage`
-and then into the of given in column `integration-stage`:
-```bash
-./vendor/bin/patchbot batch merge --branch-column=test-stage source=feature-rename-changelog
-./vendor/bin/patchbot batch merge --branch-column=integration-stage source=feature-rename-changelog
+./vendor/bin/patchbot batch patch --patch-name=update-changelog --dry-run
+./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules --dry-run
 ```
 
 ## License
