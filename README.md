@@ -97,6 +97,19 @@ you have two options:
     git config --global url."ssh://git@bitbucket.org/".insteadOf "https://bitbucket.org/"
     ```
 
+### Discover repositories automatically
+
+Instead of adding all repository URLs manually to a storage file you may
+let Patchbot discover them automatically from a GitLab namespace.
+
+Usage:
+
+```bash
+./vendor/bin/patchbot discover                           # uses GITLAB_NAMESPACE and GITLAB_URL from .env
+./vendor/bin/patchbot discover -g myusername             # explicit namespace
+./vendor/bin/patchbot discover --force                   # overwrite existing storage file
+```
+
 ## Source
 
 https://gitlab.com/pixelbrackets/patchbot/
