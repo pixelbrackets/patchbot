@@ -5,21 +5,43 @@ use PHPUnit\Framework\TestCase;
 
 class PatchbotTest extends TestCase
 {
-    protected function setUp(): void
+    public function testRoboFileClassExists(): void
     {
-        \Robo\Robo::unsetContainer();
-        $container = \Robo\Robo::createContainer();
-        \Robo\Robo::setContainer($container);
+        $this->assertTrue(class_exists(RoboFile::class));
     }
 
-    public function testPatchRequiresRepositoryUrl(): void
+    public function testRoboFileHasPatchMethod(): void
     {
-        $patchbot = new RoboFile();
-        $expectedOutput = 1; // exit code 1 = error
+        $this->assertTrue(method_exists(RoboFile::class, 'patch'));
+    }
 
-        $parameters = [];
-        $this->assertSame($expectedOutput, $patchbot->patch($parameters));
-        $parameters = ['repository-url' => ''];
-        $this->assertSame($expectedOutput, $patchbot->patch($parameters));
+    public function testRoboFileHasMergeMethod(): void
+    {
+        $this->assertTrue(method_exists(RoboFile::class, 'merge'));
+    }
+
+    public function testRoboFileHasCreateMethod(): void
+    {
+        $this->assertTrue(method_exists(RoboFile::class, 'create'));
+    }
+
+    public function testRoboFileHasBatchMethod(): void
+    {
+        $this->assertTrue(method_exists(RoboFile::class, 'batch'));
+    }
+
+    public function testRoboFileHasDiscoverMethod(): void
+    {
+        $this->assertTrue(method_exists(RoboFile::class, 'discover'));
+    }
+
+    public function testRoboFileHasPatchManyMethod(): void
+    {
+        $this->assertTrue(method_exists(RoboFile::class, 'patchMany'));
+    }
+
+    public function testRoboFileHasMergeManyMethod(): void
+    {
+        $this->assertTrue(method_exists(RoboFile::class, 'mergeMany'));
     }
 }

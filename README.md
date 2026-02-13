@@ -105,9 +105,9 @@ let Patchbot discover them automatically from a GitLab namespace.
 Usage:
 
 ```bash
-./vendor/bin/patchbot discover                           # uses GITLAB_NAMESPACE and GITLAB_URL from .env
-./vendor/bin/patchbot discover -g myusername             # explicit namespace
-./vendor/bin/patchbot discover --force                   # overwrite existing storage file
+./vendor/bin/patchbot discover                               # uses GITLAB_NAMESPACE and GITLAB_URL from .env
+./vendor/bin/patchbot discover --gitlab-namespace=myusername # set namespace to crawl
+./vendor/bin/patchbot discover --force                       # overwrite existing storage file
 ```
 
 ## Source
@@ -154,19 +154,22 @@ many repositories or ad hoc every time the need arises.
 
 ### Apply patch
 
-Pass the name of the patch directory as `patch-name` and the Git repository as
-`repository-url` to the `patchbot` script.
+Pass the name of the patch directory and the Git repository URL to apply a patch:
+
+```bash
+./vendor/bin/patchbot patch <patch-name> <repository-url>
+```
 
 Example command applying the patch script in directory `template` to
 the repository `https://git.example.com/repository`:
 ```bash
-./vendor/bin/patchbot patch --patch-name=template --repository-url=https://git.example.com/repository
+./vendor/bin/patchbot patch template https://git.example.com/repository
 ```
 
 Example command applying the patch script in directory `template` to
-the repository `ssh://git@git.example.com/repository.git`:
+the repository `git@git.example.com:user/repository.git`:
 ```bash
-./vendor/bin/patchbot patch --patch-name=template --repository-url=ssh://git@git.example.com/repository.git
+./vendor/bin/patchbot patch template git@git.example.com:user/repository.git
 ```
 
 **Custom options**
@@ -174,13 +177,13 @@ the repository `ssh://git@git.example.com/repository.git`:
 To create the feature branch based on the branch `development`
 instead of the default main branch use this command:
 ```bash
-./vendor/bin/patchbot patch --source-branch=development --patch-name=template --repository-url=https://git.example.com/repository
+./vendor/bin/patchbot patch template https://git.example.com/repository --source-branch=development
 ```
 
 Patchbot will use a random name for the feature branch. To use a custom name
 like `feature-1337-add-license-file` for the feature branch instead run:
 ```bash
-./vendor/bin/patchbot patch --branch-name=feature-1337-add-license-file --patch-name=template --repository-url=https://git.example.com/repository
+./vendor/bin/patchbot patch template https://git.example.com/repository --branch-name=feature-1337-add-license-file
 ```
 
 It is recommended to let a CI run all tests. That's why Patchbot creates a
@@ -188,7 +191,7 @@ feature branch by default. If you want to review complex changes manually before
 the commit is created, then use the `halt-before-commit` option:
 
 ```bash
-./vendor/bin/patchbot patch --halt-before-commit --patch-name=template --repository-url=https://git.example.com/repository
+./vendor/bin/patchbot patch template https://git.example.com/repository --halt-before-commit
 ```
 
 To be more verbose add `-v` to each command. Add `-vvv` for debugging.
@@ -198,7 +201,7 @@ The flag `--no-ansi` will remove output formation.
 Use `--dry-run` to preview what would happen without making any changes:
 
 ```bash
-./vendor/bin/patchbot patch --dry-run --patch-name=template --repository-url=https://git.example.com/repository
+./vendor/bin/patchbot patch template https://git.example.com/repository --dry-run
 ```
 
 ### Merge feature branch
@@ -208,15 +211,19 @@ Use `--dry-run` to preview what would happen without making any changes:
 When you reviewed the feature branch and all CI tests are successful then
 you can use Patchbot again to merge the feature branch.
 
+```bash
+./vendor/bin/patchbot merge <source-branch> <target-branch> <repository-url>
+```
+
 Example command to merge branch `bugfix-add-missing-lock-file` into
 branch `main` in repository `https://git.example.com/repository`:
 ```bash
-./vendor/bin/patchbot merge --source=bugfix-add-missing-lock-file --target=main --repository-url=https://git.example.com/repository
+./vendor/bin/patchbot merge bugfix-add-missing-lock-file main https://git.example.com/repository
 ```
 
 Use `--dry-run` to preview without executing:
 ```bash
-./vendor/bin/patchbot merge --dry-run --source=bugfix-add-missing-lock-file --target=main --repository-url=https://git.example.com/repository
+./vendor/bin/patchbot merge bugfix-add-missing-lock-file main https://git.example.com/repository --dry-run
 ```
 
 ### Add a new patch
@@ -224,8 +231,9 @@ Use `--dry-run` to preview without executing:
 Example command to create a directory named `add-changelog-file` and
 all files needed for the patch (the name is slugified automatically):
 ```bash
-./vendor/bin/patchbot create --patch-name="Add CHANGELOG file"
+./vendor/bin/patchbot create "Add CHANGELOG file"
 ```
+
 Or copy the example folder `template` manually instead and rename it as desired.
 
 Now replace the patch code in `patch.php` and the commit message
@@ -297,8 +305,11 @@ GitLab namespace (group or user):
 cp .env.example .env
 # Edit .env with your GITLAB_TOKEN and GITLAB_NAMESPACE
 
-# Discover repositories
+# Discover repositories (uses GITLAB_NAMESPACE from .env)
 ./vendor/bin/patchbot discover
+
+# Or specify namespace directly
+./vendor/bin/patchbot discover --gitlab-namespace=mygroup
 ```
 
 This creates a `repositories.json` file with all discovered repositories,
@@ -306,19 +317,28 @@ including their clone URLs and default branches.
 
 #### Apply patches
 
-The `patch` subcommand applies a patch to all repositories in `repositories.json`:
+Apply a patch to all repositories in `repositories.json`:
 
 ```bash
-./vendor/bin/patchbot batch patch --patch-name=update-changelog
+./vendor/bin/patchbot patch-many <patch-name>
+```
+
+Example:
+```bash
+./vendor/bin/patchbot patch-many update-changelog
 ```
 
 #### Merge feature branches
 
-The `merge` subcommand merges a feature branch into the default branch
-for all repositories:
+Merge a feature branch into the default branch for all repositories:
 
 ```bash
-./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules
+./vendor/bin/patchbot merge-many <source-branch>
+```
+
+Example:
+```bash
+./vendor/bin/patchbot merge-many feature-add-phpcs-rules
 ```
 
 #### Filter repositories
@@ -327,14 +347,14 @@ Use `--filter` to process only matching repositories:
 
 ```bash
 # Filter by path pattern (glob syntax)
-./vendor/bin/patchbot batch patch --patch-name=X --filter="path:my-org/*"
-./vendor/bin/patchbot batch patch --patch-name=X --filter="path:*/typo3-*"
+./vendor/bin/patchbot patch-many update-changelog --filter="path:my-org/*"
+./vendor/bin/patchbot patch-many update-changelog --filter="path:*/typo3-*"
 
 # Filter by GitLab topic
-./vendor/bin/patchbot batch patch --patch-name=X --filter="topic:php"
+./vendor/bin/patchbot patch-many update-changelog --filter="topic:php"
 
 # Combine multiple filters (AND logic)
-./vendor/bin/patchbot batch patch --patch-name=X --filter="path:my-org/*" --filter="topic:php"
+./vendor/bin/patchbot patch-many update-changelog --filter="path:my-org/*" --filter="topic:php"
 ```
 
 #### Create merge requests
@@ -342,8 +362,8 @@ Use `--filter` to process only matching repositories:
 Use `--create-mr` to automatically create GitLab merge requests after pushing:
 
 ```bash
-./vendor/bin/patchbot patch --create-mr --patch-name=template --repository-url=git@gitlab.com:user/repo.git
-./vendor/bin/patchbot batch patch --create-mr --patch-name=template
+./vendor/bin/patchbot patch template git@gitlab.com:user/repo.git --create-mr
+./vendor/bin/patchbot patch-many update-changelog --create-mr
 ```
 
 Requires `GITLAB_TOKEN` environment variable.
@@ -353,8 +373,8 @@ Requires `GITLAB_TOKEN` environment variable.
 Use `--dry-run` to preview what would happen without making any changes:
 
 ```bash
-./vendor/bin/patchbot batch patch --patch-name=update-changelog --dry-run
-./vendor/bin/patchbot batch merge --source=feature-add-phpcs-rules --dry-run
+./vendor/bin/patchbot patch-many update-changelog --dry-run
+./vendor/bin/patchbot merge-many feature-add-phpcs-rules --dry-run
 ```
 
 #### Custom Git user

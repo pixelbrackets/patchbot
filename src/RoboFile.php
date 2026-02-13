@@ -18,11 +18,13 @@ class RoboFile extends \Robo\Tasks
     /**
      * Apply changes, commit, push
      *
+     * @param string $patchName Name of the patch directory (positional arg)
+     * @param string $repositoryUrl URI of Git repository (positional arg)
      * @param array $options
-     * @option $repository-url URI of Git repository (HTTPS/SSH/FILE)
+     * @option $patch-name Name of the patch directory (alternative to positional arg)
+     * @option $repository-url URI of Git repository (alternative to positional arg)
      * @option $working-directory Working directory to check out repositories
      * @option $patch-source-directory Source directory for all collected patches
-     * @option $patch-name Name of the directory where the patch code resides
      * @option $source-branch Name of the branch to create a new branch upon
      * @option $branch-name Name of the feature branch to be created
      * @option $halt-before-commit Pause before changes are committed, asks to continue
@@ -31,20 +33,27 @@ class RoboFile extends \Robo\Tasks
      * @return int exit code
      * @throws TaskException
      */
-    public function patch(array $options = [
-        'repository-url|g' => null,
-        'working-directory|d' => null,
-        'patch-source-directory|s' => null,
-        'patch-name|p' => 'template',
-        'source-branch' => 'main',
-        'branch-name' => null,
-        'halt-before-commit' => false,
-        'dry-run' => false,
-        'create-mr' => false,
-    ]): int
-    {
+    public function patch(
+        string $patchName = '',
+        string $repositoryUrl = '',
+        array $options = [
+            'patch-name|p' => '',
+            'repository-url|g' => '',
+            'working-directory|d' => null,
+            'patch-source-directory|s' => null,
+            'source-branch' => 'main',
+            'branch-name' => null,
+            'halt-before-commit' => false,
+            'dry-run' => false,
+            'create-mr' => false,
+        ]
+    ): int {
+        // Support both positional args and options (backwards compatibility)
+        $options['patch-name'] = $patchName ?: ($options['patch-name'] ?: 'template');
+        $options['repository-url'] = $repositoryUrl ?: $options['repository-url'];
+
         if (empty($options['repository-url'])) {
-            $this->io()->error('Missing arguments');
+            $this->io()->error('Missing repository URL');
             return 1;
         }
 
@@ -100,10 +109,9 @@ class RoboFile extends \Robo\Tasks
             }
         } else {
             // Suggest next steps
-            $this->say('Hint: Run `./vendor/bin/patchbot merge'
-                . ' --source=' . $options['branch-name']
-                . ' --target=<target branch>'
-                . ' --repository-url=' . $options['repository-url'] . '` to merge the feature branch');
+            $this->say('Hint: Run `./vendor/bin/patchbot merge '
+                . $options['branch-name'] . ' <target-branch> '
+                . $options['repository-url'] . '` to merge the feature branch');
         }
 
         return 0;
@@ -112,23 +120,35 @@ class RoboFile extends \Robo\Tasks
     /**
      * Merge one branch into another, push
      *
+     * @param string $sourceBranch Source branch name (positional arg)
+     * @param string $targetBranch Target branch name (positional arg)
+     * @param string $repositoryUrl URI of Git repository (positional arg)
      * @param array $options
-     * @option $repository-url URI of Git repository (HTTPS/SSH/FILE)
+     * @option $source Source branch name (alternative to positional arg)
+     * @option $target Target branch name (alternative to positional arg)
+     * @option $repository-url URI of Git repository (alternative to positional arg)
      * @option $working-directory Working directory to check out repositories
-     * @option $source Source branch name (e.g. feature branch)
-     * @option $target Target branch name (e.g. main branch)
      * @option $dry-run Show what would be done without executing
      * @return int exit code
      * @throws TaskException
      */
-    public function merge(array $options = [
-        'repository-url|g' => null,
-        'working-directory|d' => null,
-        'source|s' => null,
-        'target|t' => null,
-        'dry-run' => false,
-    ]): int
-    {
+    public function merge(
+        string $sourceBranch = '',
+        string $targetBranch = '',
+        string $repositoryUrl = '',
+        array $options = [
+            'source|s' => '',
+            'target|t' => '',
+            'repository-url|g' => '',
+            'working-directory|d' => null,
+            'dry-run' => false,
+        ]
+    ): int {
+        // Support both positional args and options (backwards compatibility)
+        $options['source'] = $sourceBranch ?: $options['source'];
+        $options['target'] = $targetBranch ?: $options['target'];
+        $options['repository-url'] = $repositoryUrl ?: $options['repository-url'];
+
         if (
             empty($options['repository-url']) ||
             empty($options['source']) ||
@@ -176,30 +196,36 @@ class RoboFile extends \Robo\Tasks
     /**
      * Create a new patch
      *
+     * @param string $patchName Name of the patch (positional arg)
      * @param array $options
-     * @option $patch-name Name of the patch, used as directory name
+     * @option $patch-name Name of the patch (alternative to positional arg)
      * @return int exit code
      * @throws TaskException
      */
-    public function create(array $options = [
-        'patch-name|p' => null,
-    ]): int
-    {
-        if (empty($options['patch-name'])) {
+    public function create(
+        string $patchName = '',
+        array $options = [
+            'patch-name|p' => '',
+        ]
+    ): int {
+        // Support both positional arg and option (backwards compatibility)
+        $patchName = $patchName ?: $options['patch-name'];
+
+        if (empty($patchName)) {
             $this->io()->error('Missing arguments');
             return 1;
         }
 
-        $patchName = (new Slugify())->slugify($options['patch-name']);
-        $patchDirectory = getcwd() . '/patches/' . $patchName;
+        $slugifiedName = (new Slugify())->slugify($patchName);
+        $patchDirectory = getcwd() . '/patches/' . $slugifiedName;
 
         // Print summary
         $this->io()->section('Create');
         $this->io()->listing([
-            'Patch: ' . $options['patch-name']
+            'Patch: ' . $patchName
         ]);
 
-        $this->say('Create patch ' . $patchName);
+        $this->say('Create patch ' . $slugifiedName);
         if (is_dir($patchDirectory)) {
             $this->io()->error('Patch directory »' . $patchDirectory . '« already exists');
             return 1;
@@ -212,9 +238,9 @@ class RoboFile extends \Robo\Tasks
         $this->io()->success('Patch directory created');
         // Suggest next steps
         $this->say('- Edit patch.php & commit-message.txt in ' . $patchDirectory);
-        $this->say('- Run `./vendor/bin/patchbot patch --patch-name='
-            . $patchName
-            . ' --repository-url=<git repository url>` to apply the patch to a repository');
+        $this->say('- Run `./vendor/bin/patchbot patch '
+            . $slugifiedName
+            . ' <repository-url>` to apply the patch to a repository');
 
         return 0;
     }
@@ -311,8 +337,165 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
+     * Apply a patch to all repositories
+     *
+     * @param string $patchName Name of the patch directory
+     * @param array $options
+     * @option $branch-name Name of the feature branch to be created
+     * @option $halt-before-commit Pause before changes are committed, asks to continue
+     * @option $dry-run Show what would be done without executing
+     * @option $filter Filter repositories (path:pattern or topic:tag, can be used multiple times)
+     * @option $create-mr Create GitLab merge request after pushing
+     * @return int exit code
+     * @throws TaskException
+     */
+    public function patchMany(
+        string $patchName = 'template',
+        array $options = [
+            'branch-name' => null,
+            'halt-before-commit' => false,
+            'dry-run' => false,
+            'filter' => [],
+            'create-mr' => false,
+        ]
+    ): int {
+        $repositories = $this->loadRepositories($options['filter']);
+        if ($repositories === null) {
+            return 1;
+        }
+        if (empty($repositories)) {
+            return 0;
+        }
+
+        $workingDirectory = getcwd();
+        $patchSourceDirectory = getcwd() . '/patches/';
+        $branchName = $options['branch-name'] ?? date('Ymd') . '_patchbot_' . uniqid();
+        $isDryRun = $options['dry-run'];
+
+        if ($isDryRun) {
+            $this->io()->section('Dry Run');
+        }
+
+        $results = ['success' => 0, 'skipped' => 0, 'failed' => 0];
+
+        foreach ($repositories as $repository) {
+            if ($isDryRun) {
+                $dryRunMsg = '[DRY-RUN] Would patch: ' . $repository['path_with_namespace'] . ' (' . $repository['default_branch'] . ')';
+                if ($options['create-mr']) {
+                    $dryRunMsg .= ' and create MR';
+                }
+                $this->io()->text($dryRunMsg);
+                continue;
+            }
+            chdir($workingDirectory);
+            try {
+                $result = $this->runPatch([
+                    'repository-url' => $repository['clone_url_ssh'],
+                    'working-directory' => $this->getTemporaryDirectory(),
+                    'patch-source-directory' => $patchSourceDirectory,
+                    'patch-name' => $patchName,
+                    'source-branch' => $repository['default_branch'],
+                    'branch-name' => $branchName,
+                    'halt-before-commit' => $options['halt-before-commit'],
+                ]);
+                if ($result) {
+                    $results['success']++;
+                    $this->io()->success('Patched: ' . $repository['path_with_namespace']);
+
+                    if ($options['create-mr']) {
+                        $commitMessage = file_get_contents($patchSourceDirectory . $patchName . '/commit-message.txt');
+                        $mrUrl = $this->createMergeRequest(
+                            $repository['clone_url_ssh'],
+                            $branchName,
+                            $repository['default_branch'],
+                            $commitMessage
+                        );
+                        if ($mrUrl) {
+                            $this->io()->text('  MR: ' . $mrUrl);
+                        }
+                    }
+                } else {
+                    $results['skipped']++;
+                    $this->io()->text('Skipped: ' . $repository['path_with_namespace'] . ' (no changes)');
+                }
+            } catch (\Exception $e) {
+                $results['failed']++;
+                $this->io()->error('Failed: ' . $repository['path_with_namespace'] . ' - ' . $e->getMessage());
+            }
+        }
+
+        $this->printBatchSummary($results, $isDryRun, count($repositories), 'patched');
+        return $results['failed'] > 0 ? 1 : 0;
+    }
+
+    /**
+     * Merge a branch into all repositories
+     *
+     * @param string $sourceBranch Source branch name to merge
+     * @param array $options
+     * @option $dry-run Show what would be done without executing
+     * @option $filter Filter repositories (path:pattern or topic:tag, can be used multiple times)
+     * @return int exit code
+     * @throws TaskException
+     */
+    public function mergeMany(
+        string $sourceBranch,
+        array $options = [
+            'dry-run' => false,
+            'filter' => [],
+        ]
+    ): int {
+        $repositories = $this->loadRepositories($options['filter']);
+        if ($repositories === null) {
+            return 1;
+        }
+        if (empty($repositories)) {
+            return 0;
+        }
+
+        $workingDirectory = getcwd();
+        $isDryRun = $options['dry-run'];
+
+        if ($isDryRun) {
+            $this->io()->section('Dry Run');
+        }
+
+        $results = ['success' => 0, 'skipped' => 0, 'failed' => 0];
+
+        foreach ($repositories as $repository) {
+            if ($isDryRun) {
+                $this->io()->text('[DRY-RUN] Would merge: ' . $sourceBranch . ' -> ' . $repository['default_branch'] . ' in ' . $repository['path_with_namespace']);
+                continue;
+            }
+            chdir($workingDirectory);
+            try {
+                $result = $this->runMerge([
+                    'repository-url' => $repository['clone_url_ssh'],
+                    'working-directory' => $this->getTemporaryDirectory(),
+                    'source' => $sourceBranch,
+                    'target' => $repository['default_branch'],
+                ]);
+                if ($result) {
+                    $results['success']++;
+                    $this->io()->success('Merged: ' . $repository['path_with_namespace']);
+                } else {
+                    $results['skipped']++;
+                    $this->io()->text('Skipped: ' . $repository['path_with_namespace'] . ' (already up-to-date)');
+                }
+            } catch (\Exception $e) {
+                $results['failed']++;
+                $this->io()->error('Failed: ' . $repository['path_with_namespace'] . ' - ' . $e->getMessage());
+            }
+        }
+
+        $this->printBatchSummary($results, $isDryRun, count($repositories), 'merged');
+        return $results['failed'] > 0 ? 1 : 0;
+    }
+
+    /**
      * Run batch-mode commands
      *
+     * @deprecated Use patch-many or merge-many instead
      * @param string $batchCommand Name of command to run in batch mode (patch or merge)
      * @param array $options
      * @option $working-directory Working directory to check out repositories
@@ -339,6 +522,9 @@ class RoboFile extends \Robo\Tasks
         'create-mr' => false,
     ]): int
     {
+        // Deprecation warning
+        $this->io()->warning('The "batch" command is deprecated. Use "patch-many" or "merge-many" instead.');
+
         $workingDirectory = getcwd();
         $configFile = 'repositories.json';
 
@@ -717,8 +903,8 @@ class RoboFile extends \Robo\Tasks
             [$type, $value] = explode(':', $filter, 2);
 
             $repositories = match ($type) {
-                'path' => array_filter($repositories, fn($repo) => fnmatch($value, $repo['path_with_namespace'])),
-                'topic' => array_filter($repositories, fn($repo) => in_array($value, $repo['topics'] ?? [])),
+                'path' => array_filter($repositories, fn ($repo) => fnmatch($value, $repo['path_with_namespace'])),
+                'topic' => array_filter($repositories, fn ($repo) => in_array($value, $repo['topics'] ?? [])),
                 default => $repositories,
             };
 
@@ -811,5 +997,78 @@ class RoboFile extends \Robo\Tasks
         }
 
         return null;
+    }
+
+    /**
+     * Load repositories from config file and apply filters
+     *
+     * @param array|string $filters Filter expressions
+     * @return array|null Repositories array, or null on error
+     */
+    protected function loadRepositories(array|string $filters = []): ?array
+    {
+        $configFile = 'repositories.json';
+
+        if (false === is_file($configFile)) {
+            $this->io()->error('Can not find file "' . $configFile . '". Run "patchbot discover" first.');
+            return null;
+        }
+
+        $jsonContent = file_get_contents($configFile);
+        $config = json_decode($jsonContent, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->io()->error('Invalid JSON in ' . $configFile . ': ' . json_last_error_msg());
+            return null;
+        }
+
+        $repositories = $config['repositories'] ?? [];
+
+        if (empty($repositories)) {
+            $this->io()->warning('No repositories found in ' . $configFile);
+            return [];
+        }
+
+        // Apply filters
+        $filters = is_array($filters) ? $filters : [$filters];
+        $filters = array_filter($filters);
+        if (!empty($filters)) {
+            $repositories = $this->filterRepositories($repositories, $filters);
+            if (empty($repositories)) {
+                $this->io()->warning('No repositories match the filter criteria');
+                return [];
+            }
+        }
+
+        return $repositories;
+    }
+
+    /**
+     * Print batch processing summary
+     *
+     * @param array $results Results array with success/skipped/failed counts
+     * @param bool $isDryRun Whether this was a dry run
+     * @param int $totalCount Total number of repositories
+     * @param string $action Action verb (patched/merged)
+     */
+    protected function printBatchSummary(array $results, bool $isDryRun, int $totalCount, string $action): void
+    {
+        $this->io()->newLine();
+        if ($isDryRun) {
+            $this->io()->text($totalCount . ' repositories would be processed');
+        } else {
+            $total = $results['success'] + $results['skipped'] + $results['failed'];
+            $this->io()->section('Summary');
+            $this->io()->text($total . ' repositories processed');
+            if ($results['success'] > 0) {
+                $this->io()->text('  ✓ ' . $results['success'] . ' ' . $action);
+            }
+            if ($results['skipped'] > 0) {
+                $this->io()->text('  - ' . $results['skipped'] . ' skipped (no changes)');
+            }
+            if ($results['failed'] > 0) {
+                $this->io()->text('  ✗ ' . $results['failed'] . ' failed');
+            }
+        }
     }
 }

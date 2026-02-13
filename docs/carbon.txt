@@ -1,4 +1,4 @@
-~/acme-migrations $ ./vendor/bin/patchbot patch --patch-name=my-patch --repository-url=https://git.example.com/example-repository -v
+~/acme-migrations $ ./vendor/bin/patchbot patch my-patch https://git.example.com/example-repository -v
 
 Patch
 -----

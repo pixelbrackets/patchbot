@@ -35,6 +35,9 @@ trait CommandTesterTrait
         $statusCode = $runner->execute($argv, $this->appName, $this->appVersion, $output);
         \Robo\Robo::unsetContainer();
 
+        // Restore default error handler to avoid PHPUnit "risky" warnings
+        restore_error_handler();
+
         // Return output and status code
         return [trim($output->fetch()), $statusCode];
     }

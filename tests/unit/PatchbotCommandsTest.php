@@ -46,7 +46,11 @@ class PatchbotCommandsTest extends TestCase
 
     public static function tearDownAfterClass(): void
     {
-        //rmdir(self::$bareRepository);
+        // Ensure Robo container is available for temp directory cleanup
+        if (!\Robo\Robo::hasContainer()) {
+            $container = \Robo\Robo::createContainer();
+            \Robo\Robo::setContainer($container);
+        }
     }
 
     /**
@@ -70,12 +74,12 @@ class PatchbotCommandsTest extends TestCase
                 'list',
             ],
             [
-                '--repository-url',
+                '<patchName>',
                 0,
                 'patch', '--help'
             ],
             [
-                'Missing arguments',
+                'Missing repository URL',
                 1,
                 'patch',
             ],
@@ -90,7 +94,7 @@ class PatchbotCommandsTest extends TestCase
                 'create',
             ],
             [
-                'Not enough arguments ',
+                'Not enough arguments',
                 1,
                 'batch',
             ]
@@ -120,17 +124,17 @@ class PatchbotCommandsTest extends TestCase
             [
                 'Cloning failed',
                 1,
-                'patch', '--repository-url=file:///not-existing-repository-' . microtime()
+                'patch', 'template', 'file:///not-existing-repository-' . microtime()
             ],
             [
                 'Branch creation failed',
                 1,
-                'patch', '--source-branch=branch-does-not-exist', '--repository-url=file://' . self::$bareRepository
+                'patch', 'template', 'file://' . self::$bareRepository, '--source-branch=branch-does-not-exist'
             ],
             [
                 'nothing to change',
                 0,
-                'patch', '--repository-url=file://' . self::$bareRepository
+                'patch', 'template', 'file://' . self::$bareRepository
             ]
         ];
     }
