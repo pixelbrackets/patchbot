@@ -8,40 +8,58 @@
 [![License](https://img.shields.io/badge/license-gpl--2.0--or--later-blue.svg?style=flat-square)](https://spdx.org/licenses/GPL-2.0-or-later.html)
 [![Contribution](https://img.shields.io/badge/contributions_welcome-%F0%9F%94%B0-brightgreen.svg?labelColor=brightgreen&style=flat-square)](https://gitlab.com/pixelbrackets/patchbot/-/blob/master/CONTRIBUTING.md)
 
-A tool to automate the distribution of patches to various Git repositories.
+Automate changes across multiple Git repositories — create branches, apply
+patches, push, and open merge requests in batch.
 
 ![Screenshot](docs/screenshot.png)
 
-_⭐ You like this package? Please star it or send a tweet. ⭐_
+## Why Patchbot?
 
-## Vision
+You need to apply the same change to 20 repositories. Manually that means:
+clone, branch, edit, commit, push, create merge request — times 20.
 
-This project provides a tool to distribute changes to a several Git repositories
-with as little manual work as possible.
+Maybe you need to rename a file in every repo, replace a deprecated URL in
+all docs, add a package to all projects or run a migration script. Nothing a plain
+[Git patch file](https://git-scm.com/docs/git-format-patch/2.7.6) could solve,
+but something that can be automated with a script.
 
-The need for this came up when I had to apply the same manual changes to many
-of my repositories:
+Patchbot does the repetitive parts for you. Write the change once as a patch
+script, point Patchbot at your repositories, and let it create feature branches,
+commit, push, and optionally open merge requests — across all of them.
 
-- Rename files having a certain name pattern, remove a line of code
-  only if a condition matches, replace a link in all documents, execute another
-  tool which then changes files and so on. Nothing a plain 
-  [Git patch file](https://git-scm.com/docs/git-format-patch/2.7.6) could solve,
-  but something that could be automated nevertheless with a migration script.
-- Create a feature branch, commit all changes with a good commit message,
-  push the branch, wait for tests to turn green, open a pull request.
-- Repeat the same steps in many other repositories.
+Saving time, preventing careless mistakes and avoiding monotonous work.
 
-The idea is to do the changes only once and move the repetitions to a tool.
-Saving time, preventing careless mistakes and shun monotonous work.
-
-📝 Take a look at this
+Take a look at this
 [blog post with real world examples](https://pixelbrackets.de/notes/distribute-patches-to-many-git-repositories-with-patchbot)
-and how Patchbot helps to reduce technical debt across your own Git
-repositories.
+to see how Patchbot helps reduce technical debt across Git repositories.
 
-See [»Usage«](#usage) for example commands.
+## Key Features
 
-The package follows the KISS principle.
+- Batch git operations - Apply the same patch to 1, 20, or 300 repositories
+- Auto-discovery - Scan a GitLab namespace to find all repositories automatically
+- Merge request creation - Optionally create GitLab MRs after pushing (`--create-mr`)
+- Repository filtering - Target specific repos by path pattern or GitLab topic (`--filter`)
+- Dry-run mode - Preview what would happen without making changes (`--dry-run`)
+- Custom git user - Push as a bot user instead of your personal account
+- CI-ready - Run Patchbot as a scheduled GitLab CI pipeline
+
+## Quick Start
+
+```bash
+# Create a new patch project using the skeleton
+composer create-project pixelbrackets/patchbot-skeleton my-patches
+cd my-patches
+
+# Create a new patch
+./vendor/bin/patchbot create "My first patch"
+
+# Edit the patch script and commit message
+# patches/my-first-patch/patch.php
+# patches/my-first-patch/commit-message.txt
+
+# Apply the patch to a repository
+./vendor/bin/patchbot patch my-first-patch git@gitlab.com:user/repo.git
+```
 
 ## Requirements
 
@@ -50,351 +68,201 @@ The package follows the KISS principle.
 
 ## Installation
 
-💡 Use the 
+Use the
 [skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/)
-to create an example project right away.
-
-- `composer create-project pixelbrackets/patchbot-skeleton`
-
-Packagist Entry to install Patchbot only
-https://packagist.org/packages/pixelbrackets/patchbot/
-
-- `composer require pixelbrackets/patchbot`
-
-### Access rights
-
-🔑 *The user running Patchbot needs to have access to the target repository.*
-
-Make sure that the user running Patchbot is allowed to clone and push to
-all target repositories.
-
-Patchbot allows all protocols for connections to remotes which are supported
-by Git natively:
-[FILE, HTTP/HTTPS, SSH](https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols)
-
-The recommended protocol is SSH.
-
-#### HTTPS Credentials
-
-Git by default does not store any credentials. So *every connection* to a
-repository by HTTPS will prompt for a username and password.
-
-To avoid these password prompts when using HTTPS URIs with Patchbot
-you have two options:
-
-- Allow Git to store credentials in memory for some time
-  - The password prompt then pops up once only for each host
-  - Example command to keep the credentials in memory for 15 minutes:
-    ```bash
-    git config --global credential.helper 'cache --timeout=900'
-    ```
-- Force Git to use SSH protocol checkouts instead of HTTP/HTTPS
-  - Has to be configured for each host
-  - Example commands to set up the replacements for GitHub, GitLab & BitBucket
-    ```bash
-    git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
-    git config --global url."ssh://git@gitlab.com/".insteadOf "https://gitlab.com/"
-    git config --global url."ssh://git@bitbucket.org/".insteadOf "https://bitbucket.org/"
-    ```
-
-### Discover repositories automatically
-
-Instead of adding all repository URLs manually to a storage file you may
-let Patchbot discover them automatically from a GitLab namespace.
-
-Usage:
+to create a patch project right away:
 
 ```bash
-./vendor/bin/patchbot discover                               # uses GITLAB_NAMESPACE and GITLAB_URL from .env
-./vendor/bin/patchbot discover --gitlab-namespace=myusername # set namespace to crawl
-./vendor/bin/patchbot discover --force                       # overwrite existing storage file
+composer create-project pixelbrackets/patchbot-skeleton my-patches
 ```
 
-## Source
+Or install Patchbot as a dependency in an existing project:
 
-https://gitlab.com/pixelbrackets/patchbot/
+```bash
+composer require pixelbrackets/patchbot
+```
 
-Mirror https://github.com/pixelbrackets/patchbot/
+The user running Patchbot needs clone and push access to the target repositories.
+SSH is the recommended protocol. See the
+[walkthrough guide](docs/walkthrough.md#access-rights)
+for details on configuring access.
 
 ## Usage
 
-Patchbot patches a given Git repository.
+### Patch structure
 
-This means it will clone the repository, create a feature branch,
-run a given PHP patch script, commit the changes with a given commit message
-and push the branch to the remote.
+Patchbot organizes patches in the `patches/` directory. Each patch directory
+contains a PHP script (`patch.php`) and a commit message (`commit-message.txt`):
 
-Patchbot uses a lean file structure to organize patches (see
-[skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/)).
-
-The directory `patches` contains a collection of all your “patch directories“.
-
-Each patch directory always contains at least a PHP script named `patch.php`
-and a commit message named `commit-message.txt`. 
-
-Example file structure:
 ```
-.
-|-- patches
-|   |-- template
-|   |   |-- commit-message.txt
-|   |   `-- patch.php
-|   `-- yet-another-patch
-|       |-- commit-message.txt
-|       `-- patch.php
-|-- vendor
-|   `-- bin
-|       `-- patchbot
-|-- composer.json
-`-- README.md
+patches/
+|-- template/
+|   |-- commit-message.txt
+|   `-- patch.php
+`-- update-changelog/
+    |-- commit-message.txt
+    `-- patch.php
 ```
 
-This way a migration script may be created once and applied in a row to
-many repositories or ad hoc every time the need arises.
+The patch script runs in the root directory of the cloned target repository.
+You can develop it incrementally by running `php <path-to-patch>/patch.php`
+directly in any project directory.
 
-### Apply patch
-
-Pass the name of the patch directory and the Git repository URL to apply a patch:
+### Apply a patch
 
 ```bash
 ./vendor/bin/patchbot patch <patch-name> <repository-url>
 ```
 
-Example command applying the patch script in directory `template` to
-the repository `https://git.example.com/repository`:
-```bash
-./vendor/bin/patchbot patch template https://git.example.com/repository
-```
-
-Example command applying the patch script in directory `template` to
-the repository `git@git.example.com:user/repository.git`:
-```bash
-./vendor/bin/patchbot patch template git@git.example.com:user/repository.git
-```
-
-**Custom options**
-
-To create the feature branch based on the branch `development`
-instead of the default main branch use this command:
-```bash
-./vendor/bin/patchbot patch template https://git.example.com/repository --source-branch=development
-```
-
-Patchbot will use a random name for the feature branch. To use a custom name
-like `feature-1337-add-license-file` for the feature branch instead run:
-```bash
-./vendor/bin/patchbot patch template https://git.example.com/repository --branch-name=feature-1337-add-license-file
-```
-
-It is recommended to let a CI run all tests. That's why Patchbot creates a
-feature branch by default. If you want to review complex changes manually before
-the commit is created, then use the `halt-before-commit` option:
+Patchbot clones the repository, creates a feature branch, runs the patch script,
+commits the changes, and pushes the branch to the remote.
 
 ```bash
-./vendor/bin/patchbot patch template https://git.example.com/repository --halt-before-commit
+# Apply patch "template" to a repository
+./vendor/bin/patchbot patch template git@gitlab.com:user/repo.git
+
+# Preview without making changes
+./vendor/bin/patchbot patch template git@gitlab.com:user/repo.git --dry-run
+
+# Create a GitLab merge request after pushing
+./vendor/bin/patchbot patch template git@gitlab.com:user/repo.git --create-mr
+
+# Use a custom source branch (default: main)
+./vendor/bin/patchbot patch template git@gitlab.com:user/repo.git --source-branch=development
+
+# Use a custom feature branch name
+./vendor/bin/patchbot patch template git@gitlab.com:user/repo.git --branch-name=feature-1337
+
+# Pause before committing (for manual review)
+./vendor/bin/patchbot patch template git@gitlab.com:user/repo.git --halt-before-commit
 ```
 
-To be more verbose add `-v` to each command. Add `-vvv` for debugging.
-This will show all steps and commands applied by Patchbot.
-The flag `--no-ansi` will remove output formation.
+### Batch apply patches
 
-Use `--dry-run` to preview what would happen without making any changes:
+Apply a patch to all repositories listed in `repositories.json`:
 
 ```bash
-./vendor/bin/patchbot patch template https://git.example.com/repository --dry-run
+./vendor/bin/patchbot patch-many <patch-name>
 ```
-
-### Merge feature branch
-
-✨️Patchbot intentionally creates a feature branch to apply patches.
-
-When you reviewed the feature branch and all CI tests are successful then
-you can use Patchbot again to merge the feature branch.
 
 ```bash
-./vendor/bin/patchbot merge <source-branch> <target-branch> <repository-url>
+# Apply to all repositories
+./vendor/bin/patchbot patch-many update-changelog
+
+# Filter by path pattern
+./vendor/bin/patchbot patch-many update-changelog --filter="path:my-org/*"
+
+# Filter by GitLab topic
+./vendor/bin/patchbot patch-many update-changelog --filter="topic:php"
+
+# Combine filters, create MRs, and preview first
+./vendor/bin/patchbot patch-many update-changelog --filter="topic:php" --create-mr --dry-run
 ```
 
-Example command to merge branch `bugfix-add-missing-lock-file` into
-branch `main` in repository `https://git.example.com/repository`:
-```bash
-./vendor/bin/patchbot merge bugfix-add-missing-lock-file main https://git.example.com/repository
-```
+After batch processing completes, a summary shows how many repositories were
+patched, skipped, or failed.
 
-Use `--dry-run` to preview without executing:
-```bash
-./vendor/bin/patchbot merge bugfix-add-missing-lock-file main https://git.example.com/repository --dry-run
-```
+### Discover repositories
 
-### Add a new patch
-
-Example command to create a directory named `add-changelog-file` and
-all files needed for the patch (the name is slugified automatically):
-```bash
-./vendor/bin/patchbot create "Add CHANGELOG file"
-```
-
-Or copy the example folder `template` manually instead and rename it as desired.
-
-Now replace the patch code in `patch.php` and the commit message
-in `commit-message.txt`.
-
-🛡 ️Patchbot runs the patch script isolated, as a consequence it is possible
-to run the script without Patchbot.
-
-💡 Tip: Switch to an existing projekt repository, run
-`php <path to patch directory>/patch.php` and develop the patch incrementally.
-When development is finished, then commit it and use Patchbot to distribute
-the patch to all other repositories.
-
-The patch code will be executed in the root directory scope of the target
-repository, keep this in mind for file searches.
-
-### Share a patch
-
-The patches created in the patch directory are probably very specific to your
-organisation or domain. So the best way to share the patches in your
-organisation is to share the patch project as Git repository.
-
-However, since a motivation for this tool was to reuse migration scripts,
-you could share general-purpose scripts with others though.
-
-One possible way is to create a GitHub Gist for a single patch.
-
-Example command using the CLI gem [gist](https://github.com/defunkt/gist)
-to upload the `template` patch:
-```bash
-cd patches/template/
-gist -d "Patchbot Patch »template« - Just a template without changes" patch.php commit-message.txt
-```
-
-🔎 Search for [Gists with Patchbot tags](https://gist.github.com/search?l=PHP&q=%23patchbot).
-
-### Import a shared patch
-
-Copy & paste all files manually to import an existing patch from another source.
-
-If the source is a Git repository then a Git clone command is sufficient.
-
-Example command importing the
-[Gist `https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745`](https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745)
-as patch `add-editorconfig`:
-```bash
-git clone --depth=1 https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745 patches/add-editorconfig/
-rm -r patches/add-editorconfig/.git
-```
-
-### Batch processing
-
-To apply a patch to 1 or 20 repositories you may run the Patchbot script
-repeatedly with different URLs. To do this with 300 repos you may want
-to use the batch processing mode instead.
-
-This mode will trigger the `patch` or `merge` command for a list of
-repositories. The list is stored in a JSON file named `repositories.json`.
-
-After batch processing completes, a summary shows the results.
-
-#### Discover repositories
-
-Use the `discover` command to automatically fetch all repositories from a
-GitLab namespace (group or user):
+Instead of adding repository URLs manually, let Patchbot discover them from
+a GitLab namespace (group or user):
 
 ```bash
 # Set up your GitLab token in .env
 cp .env.example .env
 # Edit .env with your GITLAB_TOKEN and GITLAB_NAMESPACE
 
-# Discover repositories (uses GITLAB_NAMESPACE from .env)
+# Discover repositories
 ./vendor/bin/patchbot discover
 
-# Or specify namespace directly
+# Or specify the namespace directly
 ./vendor/bin/patchbot discover --gitlab-namespace=mygroup
+
+# Overwrite existing repositories.json
+./vendor/bin/patchbot discover --force
 ```
 
 This creates a `repositories.json` file with all discovered repositories,
 including their clone URLs and default branches.
 
-#### Apply patches
+### Merge feature branches
 
-Apply a patch to all repositories in `repositories.json`:
-
-```bash
-./vendor/bin/patchbot patch-many <patch-name>
-```
-
-Example:
-```bash
-./vendor/bin/patchbot patch-many update-changelog
-```
-
-#### Merge feature branches
-
-Merge a feature branch into the default branch for all repositories:
+Patchbot creates feature branches by design, so changes can be reviewed and
+tested by CI before merging. Use the merge commands when ready:
 
 ```bash
+# Merge a branch into a target branch for one repository
+./vendor/bin/patchbot merge <source-branch> <target-branch> <repository-url>
+
+# Merge a branch into the default branch for all repositories
 ./vendor/bin/patchbot merge-many <source-branch>
 ```
 
-Example:
 ```bash
+# Examples
+./vendor/bin/patchbot merge feature-add-license main git@gitlab.com:user/repo.git
 ./vendor/bin/patchbot merge-many feature-add-phpcs-rules
-```
-
-#### Filter repositories
-
-Use `--filter` to process only matching repositories:
-
-```bash
-# Filter by path pattern (glob syntax)
-./vendor/bin/patchbot patch-many update-changelog --filter="path:my-org/*"
-./vendor/bin/patchbot patch-many update-changelog --filter="path:*/typo3-*"
-
-# Filter by GitLab topic
-./vendor/bin/patchbot patch-many update-changelog --filter="topic:php"
-
-# Combine multiple filters (AND logic)
-./vendor/bin/patchbot patch-many update-changelog --filter="path:my-org/*" --filter="topic:php"
-```
-
-#### Create merge requests
-
-Use `--create-mr` to automatically create GitLab merge requests after pushing:
-
-```bash
-./vendor/bin/patchbot patch template git@gitlab.com:user/repo.git --create-mr
-./vendor/bin/patchbot patch-many update-changelog --create-mr
-```
-
-Requires `GITLAB_TOKEN` environment variable.
-
-#### Dry run
-
-Use `--dry-run` to preview what would happen without making any changes:
-
-```bash
-./vendor/bin/patchbot patch-many update-changelog --dry-run
 ./vendor/bin/patchbot merge-many feature-add-phpcs-rules --dry-run
 ```
 
-#### Custom Git user
-
-By default, commits use your system Git config. To use a different identity
-(e.g., a bot user), set these environment variables:
+### Create a new patch
 
 ```bash
-# In .env or shell
+./vendor/bin/patchbot create "Add CHANGELOG file"
+```
+
+This generates a patch directory with the required files. Edit `patch.php`
+with your change logic and `commit-message.txt` with the commit message.
+See the [walkthrough guide](docs/walkthrough.md#writing-patches) for tips
+on developing and testing patches.
+
+### Command and options reference
+
+**Commands**
+
+| Command | Description |
+|---------|-------------|
+| `patch` | Apply changes, commit, push |
+| `patch-many` | Apply a patch to all repositories |
+| `merge` | Merge one branch into another, push |
+| `merge-many` | Merge a branch into all repositories |
+| `create` | Create a new patch |
+| `discover` | Discover repositories from a GitLab namespace |
+
+**Options**
+
+| Option | Available in | Description |
+|--------|--------------|-------------|
+| `--dry-run` | patch, merge, patch-many, merge-many | Preview without making changes |
+| `--create-mr` | patch, patch-many | Create GitLab merge request after pushing |
+| `--filter` | patch-many, merge-many | Filter repositories by `path:glob` or `topic:name` |
+| `--source-branch` | patch | Base branch for the feature branch (default: `main`) |
+| `--branch-name` | patch, patch-many | Custom name for the feature branch |
+| `--halt-before-commit` | patch, patch-many | Pause before committing for manual review |
+| `--force` | discover | Overwrite existing `repositories.json` |
+| `-v` / `-vvv` | all | Increase output verbosity |
+
+### Custom git user
+
+By default, commits use your system Git configuration. To push as a bot user,
+set these environment variables:
+
+```bash
 BOT_GIT_NAME="Patchbot"
 BOT_GIT_EMAIL="patchbot@example.com"
 ```
 
-#### GitLab CI
+### GitLab CI
 
-Run Patchbot via GitLab CI instead of locally:
+Run Patchbot as a scheduled GitLab CI pipeline instead of locally.
+Copy `.gitlab-ci.example.yml` to your config repository and set the CI/CD
+variables `GITLAB_TOKEN` and `GITLAB_NAMESPACE`.
 
-1. Copy `.gitlab-ci.example.yml` to `.gitlab-ci.yml` in your config repository
-2. Set CI/CD variables: `GITLAB_TOKEN`, `GITLAB_NAMESPACE`
-3. Trigger manually via GitLab UI (CI/CD > Pipelines > Run pipeline)
+## Source
+
+https://gitlab.com/pixelbrackets/patchbot/
+
+Mirror https://github.com/pixelbrackets/patchbot/
 
 ## License
 
@@ -404,8 +272,7 @@ The GNU General Public License can be found at http://www.gnu.org/copyleft/gpl.h
 
 ## Author
 
-Dan Untenzu (<mail@pixelbrackets.de> / [@pixelbrackets](https://pixelbrackets.de))
-
+Dan Kleine (<mail@pixelbrackets.de> / [@pixelbrackets](https://pixelbrackets.de))
 
 See [CHANGELOG.md](./CHANGELOG.md)
 
