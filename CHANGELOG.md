@@ -1,5 +1,20 @@
 # Changelog
 
+2026-02-15 Dan Untenzu <mail@pixelbrackets.de>
+
+  * 3.0.0
+  * FEATURE Rewrite docs → Remove clutter and be more concise in reason why
+  * FEATURE Easen command arguments
+    * Before: `patchbot patch --patch-name=template --repository-url=https://git.example.com/repository`
+      After: `patchbot patch template https://git.example.com/repository`
+  * FEATURE Enable setting git user & mail → Don't use global config only
+  * FEATURE Add MR creation → Option to create a GitLab merge request after pushing the branch
+  * FEATURE Add filter to batch mode → Filter repositories by path or topic in batch mode
+  * FEATURE Use JSON as storage file now
+  * FEATURE Add a `dry-run` option to preview changes without making them
+  * FEATURE Add autodiscovery for GitLab repos
+  * FEATURE Upgrade PHP version
+
 2022-03-14 Dan Untenzu <mail@pixelbrackets.de>
 
   * 2.0.0
