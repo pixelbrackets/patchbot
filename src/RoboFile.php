@@ -7,6 +7,7 @@ use Pixelbrackets\Patchbot\Discovery\GitLabDiscovery;
 use Pixelbrackets\Patchbot\PatchProvider\PatchProviderResolver;
 use Robo\Contract\VerbosityThresholdInterface;
 use Robo\Exception\TaskException;
+use Symfony\Component\Console\Question\ChoiceQuestion;
 
 /**
  * Patchbot tasks (based on Robo)
@@ -197,9 +198,14 @@ class RoboFile extends \Robo\Tasks
     /**
      * Create a new patch
      *
+     * When called without arguments, an interactive wizard guides through
+     * patch name and type selection. When arguments are provided, runs
+     * non-interactively (suitable for CI and scripted usage).
+     *
      * @param string $patchName Name of the patch (positional arg)
      * @param array $options
      * @option $patch-name Name of the patch (alternative to positional arg)
+     * @option $type Patch type: php, sh, diff, py (default: php)
      * @return int exit code
      * @throws TaskException
      */
@@ -207,23 +213,52 @@ class RoboFile extends \Robo\Tasks
         string $patchName = '',
         array $options = [
             'patch-name|p' => '',
+            'type|t' => '',
         ]
     ): int {
         // Support both positional arg and option (backwards compatibility)
         $patchName = $patchName ?: $options['patch-name'];
 
+        // Interactive wizard: prompt for patch name when missing
         if (empty($patchName)) {
-            $this->io()->error('Missing arguments');
+            if (!$this->io()->input()->isInteractive()) {
+                $this->io()->error('Missing arguments');
+                return 1;
+            }
+            $patchName = $this->ask('Patch name (e.g. "Add CHANGELOG file")');
+            if (empty($patchName)) {
+                $this->io()->error('Patch name is required');
+                return 1;
+            }
+        }
+
+        // Resolve patch type
+        $patchFiles = ['php' => 'patch.php', 'sh' => 'patch.sh', 'diff' => 'patch.diff', 'py' => 'patch.py'];
+        $type = $options['type'];
+
+        if (empty($type)) {
+            if ($this->io()->input()->isInteractive()) {
+                $question = new ChoiceQuestion('Patch type', array_keys($patchFiles), 0);
+                $type = $this->io()->askQuestion($question);
+            } else {
+                $type = 'php';
+            }
+        }
+
+        if (!isset($patchFiles[$type])) {
+            $this->io()->error('Invalid patch type "' . $type . '". Supported: php, sh, diff, py');
             return 1;
         }
 
+        $patchFile = $patchFiles[$type];
         $slugifiedName = (new Slugify())->slugify($patchName);
         $patchDirectory = getcwd() . '/patches/' . $slugifiedName;
 
         // Print summary
         $this->io()->section('Create');
         $this->io()->listing([
-            'Patch: ' . $patchName
+            'Patch: ' . $patchName,
+            'Type: ' . $patchFile,
         ]);
 
         $this->say('Create patch ' . $slugifiedName);
@@ -232,16 +267,20 @@ class RoboFile extends \Robo\Tasks
             return 1;
         }
 
-        $this->taskCopyDir([__DIR__ . '/../patches/template/' => $patchDirectory])
+        $templateDirectory = __DIR__ . '/../resources/templates/';
+        $this->taskFilesystemStack()
+            ->mkdir($patchDirectory)
+            ->copy($templateDirectory . 'commit-message.txt', $patchDirectory . '/commit-message.txt')
+            ->copy($templateDirectory . $patchFile, $patchDirectory . '/' . $patchFile)
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 
-        $this->io()->success('Patch directory created');
-        // Suggest next steps
-        $this->say('- Edit patch.php & commit-message.txt in ' . $patchDirectory);
-        $this->say('- Run `./vendor/bin/patchbot patch '
-            . $slugifiedName
-            . ' <repository-url>` to apply the patch to a repository');
+        $this->io()->success('Patch directory created: ' . $patchDirectory);
+        $this->io()->text('Next steps:');
+        $this->io()->listing([
+            'Edit ' . $patchFile . ' & commit-message.txt in ' . $patchDirectory,
+            'Run ./vendor/bin/patchbot patch ' . $slugifiedName . ' <repository-url>',
+        ]);
 
         return 0;
     }

@@ -15,6 +15,7 @@ class PatchbotCommandsTest extends TestCase
 
     protected static string $bareRepository = '';
     protected static string $projectRoot = '';
+    protected static string $starterTemplatePatchDirectory = '';
 
     /**
      * Set up a bare local Git repository
@@ -40,6 +41,13 @@ class PatchbotCommandsTest extends TestCase
             exec('git add -A');
             exec('git commit -a -m "Add README"');
             exec('git push origin main 2> /dev/null');
+        }
+        if (empty(self::$starterTemplatePatchDirectory)) {
+            self::$starterTemplatePatchDirectory = sys_get_temp_dir() . '/patchbot-starter-template-patch-' . uniqid('', true);
+            $templateDir = self::$projectRoot . '/resources/templates/';
+            mkdir(self::$starterTemplatePatchDirectory . '/starter-template-patch', 0777, true);
+            copy($templateDir . 'patch.php', self::$starterTemplatePatchDirectory . '/starter-template-patch/patch.php');
+            copy($templateDir . 'commit-message.txt', self::$starterTemplatePatchDirectory . '/starter-template-patch/commit-message.txt');
         }
     }
 
@@ -95,7 +103,7 @@ class PatchbotCommandsTest extends TestCase
             [
                 'Missing arguments',
                 1,
-                'create',
+                'create', '--no-interaction',
             ],
             [
                 'Not enough arguments',
@@ -138,8 +146,8 @@ class PatchbotCommandsTest extends TestCase
             [
                 'nothing to change',
                 0,
-                'patch', 'template', 'file://' . self::$bareRepository,
-                '--patch-source-directory=' . self::$projectRoot . '/patches'
+                'patch', 'starter-template-patch', 'file://' . self::$bareRepository,
+                '--patch-source-directory=' . self::$starterTemplatePatchDirectory
             ]
         ];
     }

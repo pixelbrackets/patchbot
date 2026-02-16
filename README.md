@@ -95,6 +95,20 @@ for details on configuring access.
 
 ## Usage
 
+Real world use cases for Patchbot include:
+
+- Add a PHP package to all projects (e.g. `composer require vendor/package`)
+- Add or update PHP-CS-Fixer rules across all projects
+- Introduce an `.editorconfig` file to all repositories
+- Replace copyright year strings in files across many repos, even when the location varies
+- Rename a vendor or company name after rebranding
+- Rename a file due to a new naming convention (e.g. `LICENSE` → `LICENSE.txt`)
+- Run database migration scripts across all projects
+- Update a subset of packages on a CI schedule
+- Run follow-up tasks after package updates (config changes, renamed classes, updated imports)
+- Add or update CI configuration files (e.g. `.gitlab-ci.yml`) across all projects
+- Remove deprecated files or config keys that are no longer needed
+
 ### Patch structure
 
 Patchbot organizes patches in the `patches/` directory. Each patch directory
@@ -224,13 +238,17 @@ tested by CI before merging. Use the merge commands when ready:
 ### Create a new patch
 
 ```bash
-./vendor/bin/patchbot create "Add CHANGELOG file"
+# Interactive wizard
+./vendor/bin/patchbot create
+
+# Set options directly
+./vendor/bin/patchbot create "Add CHANGELOG file" --type=php # type may be php, sh, diff, py
 ```
 
-This generates a patch directory with the required files. Edit `patch.php`
-with your change logic and `commit-message.txt` with the commit message.
-See the [walkthrough guide](docs/walkthrough.md#writing-patches) for tips
-on developing and testing patches.
+This generates a patch directory with the required files. Edit the patch file
+and `commit-message.txt` with the commit message and that's it.
+See the [walkthrough guide](docs/walkthrough.md#writing-patches)
+for tips on developing and testing patches.
 
 ### Command and options reference
 
@@ -255,6 +273,7 @@ on developing and testing patches.
 | `--source-branch` | patch | Base branch for the feature branch (default: `main`) |
 | `--branch-name` | patch, patch-many | Custom name for the feature branch |
 | `--halt-before-commit` | patch, patch-many | Pause before committing for manual review |
+| `--type` | create | Patch type: `php`, `sh`, `diff`, `py` (default: `php`) |
 | `--force` | discover | Overwrite existing `repositories.json` |
 | `-v` / `-vvv` | all | Increase output verbosity |
 

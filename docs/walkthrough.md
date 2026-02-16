@@ -60,21 +60,32 @@ my-patches/
 
 ## 3. Write a Patch
 
-Create a new patch directory:
+Create a new patch directory. The interactive wizard guides you
+through the required options.
 
 ```bash
+./vendor/bin/patchbot create
+```
+
+Or provide the name and optionally the type directly:
+
+```bash
+# Creates a PHP patch (default)
 ./vendor/bin/patchbot create "Add CHANGELOG file"
+
+# Creates a Shell patch
+./vendor/bin/patchbot create "Add CHANGELOG file" --type=sh
 ```
 
 This generates `patches/add-changelog-file/` with two files to edit:
 
-- `patch.php` — The script that makes the actual changes
-- `commit-message.txt` — The commit message used when applying the patch
+- The patch file (e.g. `patch.php`, `patch.sh`) - The script that makes the actual changes
+- `commit-message.txt` - The commit message used when applying the patch
 
 #### Supported patch file types
 
-Patchbot detects the patch type by filename. Replace the generated `patch.php`
-with any of the supported types:
+Patchbot detects the patch type by filename. The `create` command generates
+the correct file based on the selected type:
 
 | File | Language | Execution |
 |------|----------|-----------|
@@ -182,11 +193,11 @@ a Git repository.
 To share a single general-purpose patch, you can create a GitHub Gist.
 
 Example command using the CLI tool [gist](https://github.com/defunkt/gist)
-to upload the `template` patch:
+to upload the `add-editorconfig` patch:
 
 ```bash
-cd patches/template/
-gist -d "Patchbot Patch template - Just a template without changes" patch.php commit-message.txt
+cd patches/add-editorconfig/
+gist -d "Patchbot Patch - Add .editorconfig to a repository" patch.php commit-message.txt
 ```
 
 ### Importing a Shared Patch
