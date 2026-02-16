@@ -286,6 +286,229 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
+     * Import a patch from a URL (Gist, Git repository, or subdirectory)
+     *
+     * @param string $url URL of the Git repository or Gist (positional arg)
+     * @param string $patchName Name for the imported patch (positional arg, optional)
+     * @param array $options
+     * @option $url URL of the Git repository or Gist (alternative to positional arg)
+     * @option $patch-name Name for the imported patch (alternative to positional arg)
+     * @option $path Subdirectory within the repository to import
+     * @return int exit code
+     */
+    public function import(
+        string $url = '',
+        string $patchName = '',
+        array $options = [
+            'url|u' => '',
+            'patch-name|p' => '',
+            'path' => '',
+        ]
+    ): int {
+        $url = $url ?: $options['url'];
+        $patchName = $patchName ?: $options['patch-name'];
+
+        if (empty($url)) {
+            $this->io()->error('Missing URL');
+            return 1;
+        }
+
+        // Clone to temp directory
+        $tempDirectory = $this->getTemporaryDirectory();
+        $temporaryImportName = 'import-source';
+
+        $this->say('Clone ' . $url);
+        $result = $this->taskGitStack()
+            ->cloneShallow($url, $temporaryImportName)
+            ->dir($tempDirectory)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+        if ($result->wasSuccessful() !== true) {
+            $this->io()->error('Cloning failed - check the URL and your access rights');
+            return 1;
+        }
+
+        // Determine source directory
+        $sourceDirectory = $tempDirectory . '/' . $temporaryImportName;
+        $hasPath = !empty($options['path']);
+        if ($hasPath) {
+            $sourceDirectory .= '/' . trim($options['path'], '/');
+        }
+
+        if (!is_dir($sourceDirectory)) {
+            $this->io()->error('Path not found in repository: ' . $options['path']);
+            return 1;
+        }
+
+        // Multi-patch import: repo contains a patches/ subdirectory
+        if (!$hasPath && is_dir($sourceDirectory . '/patches')) {
+            $entries = array_diff(scandir($sourceDirectory . '/patches'), ['.', '..']);
+            $patches = array_filter($entries, fn ($entry) => is_dir($sourceDirectory . '/patches/' . $entry));
+
+            if (empty($patches)) {
+                $this->io()->warning('No patch directories found in patches/');
+                return 0;
+            }
+
+            // Print summary
+            $this->io()->section('Import');
+            $this->io()->listing([
+                'URL: ' . $url,
+                'Patches: ' . count($patches) . ' found',
+            ]);
+
+            $imported = 0;
+            $skipped = 0;
+
+            foreach ($patches as $patch) {
+                $targetDirectory = getcwd() . '/patches/' . $patch;
+                if (is_dir($targetDirectory)) {
+                    $this->io()->text('Skipped: ' . $patch . ' (already exists)');
+                    $skipped++;
+                    continue;
+                }
+
+                $this->taskFilesystemStack()
+                    ->mirror($sourceDirectory . '/patches/' . $patch, $targetDirectory)
+                    ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+                    ->run();
+                $this->io()->text('Imported: ' . $patch);
+                $imported++;
+            }
+
+            $this->io()->newLine();
+            if ($imported > 0) {
+                $this->io()->success($imported . ' patch(es) imported');
+            }
+            if ($skipped > 0) {
+                $this->io()->text($skipped . ' patch(es) skipped (already exist)');
+            }
+        } else {
+            // Single patch import
+            if (empty($patchName)) {
+                $nameSource = $hasPath ? $options['path'] : $url;
+                $patchName = (new Slugify())->slugify(basename($nameSource));
+            }
+
+            $patchDirectory = getcwd() . '/patches/' . $patchName;
+
+            // Print summary
+            $this->io()->section('Import');
+            $this->io()->listing([
+                'URL: ' . $url,
+                'Patch: ' . $patchName,
+                $hasPath ? 'Path: ' . $options['path'] : 'Path: (root)',
+            ]);
+
+            if (is_dir($patchDirectory)) {
+                $this->io()->error('Patch directory already exists: ' . $patchDirectory);
+                return 1;
+            }
+
+            $this->taskFilesystemStack()
+                ->mirror($sourceDirectory, $patchDirectory)
+                ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+                ->run();
+
+            // Remove .git directory if present (gist clones include it)
+            $gitDir = $patchDirectory . '/.git';
+            if (is_dir($gitDir)) {
+                $this->taskDeleteDir($gitDir)
+                    ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+                    ->run();
+            }
+
+            $this->io()->success('Patch imported: ' . $patchName);
+        }
+
+        $this->io()->text('Next steps:');
+        $this->io()->listing([
+            'Review and customize the imported patches in patches/',
+            'Run ./vendor/bin/patchbot patch <patch-name> <repository-url>',
+        ]);
+
+        return 0;
+    }
+
+
+    /**
+     * Export a patch for sharing
+     *
+     * Prints ready-to-use commands to share a patch as a GitHub Gist.
+     *
+     * @param string $patchName Name of the patch to export (positional arg)
+     * @param array $options
+     * @option $patch-name Name of the patch to export (alternative to positional arg)
+     * @return int exit code
+     */
+    public function export(
+        string $patchName = '',
+        array $options = [
+            'patch-name|p' => '',
+        ]
+    ): int {
+        $patchName = $patchName ?: $options['patch-name'];
+
+        if (empty($patchName)) {
+            $this->io()->error('Missing patch name');
+            return 1;
+        }
+
+        $patchDirectory = getcwd() . '/patches/' . $patchName;
+
+        if (!is_dir($patchDirectory)) {
+            $this->io()->error('Patch directory not found: ' . $patchDirectory);
+            return 1;
+        }
+
+        // Warn about missing files
+        $commitMessageFile = $patchDirectory . '/commit-message.txt';
+        if (!is_file($commitMessageFile) || empty(trim(file_get_contents($commitMessageFile)))) {
+            $this->io()->warning('Missing or empty commit-message.txt');
+        }
+        $resolver = new PatchProviderResolver();
+        try {
+            $resolver->resolve($patchDirectory);
+        } catch (\RuntimeException $e) {
+            $this->io()->warning($e->getMessage());
+        }
+
+        // Collect files
+        $files = array_diff(scandir($patchDirectory), ['.', '..']);
+
+        // Print summary
+        $this->io()->section('Export');
+        $this->io()->listing([
+            'Patch: ' . $patchName,
+            'Files: ' . implode(', ', $files),
+        ]);
+
+        // Create gist via GitHub CLI
+        $ghAvailable = shell_exec('which gh 2>/dev/null');
+        if (!$ghAvailable) {
+            $this->io()->error('GitHub CLI (gh) not found. Install it from https://cli.github.com/');
+            return 1;
+        }
+
+        $filesArgument = implode(' ', $files);
+        $ghCommand = 'gh gist create --desc '
+            . escapeshellarg('Patchbot Patch - ' . $patchName) . ' '
+            . $filesArgument;
+
+        $result = $this->taskExec($ghCommand)
+            ->dir($patchDirectory)
+            ->run();
+        if ($result->wasSuccessful()) {
+            $this->io()->success('Gist created');
+        } else {
+            $this->io()->error('Gist creation failed');
+            return 1;
+        }
+
+        return 0;
+    }
+
+    /**
      * Discover repositories from a GitLab namespace
      *
      * @param array $options

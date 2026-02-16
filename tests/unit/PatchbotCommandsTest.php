@@ -109,6 +109,21 @@ class PatchbotCommandsTest extends TestCase
                 'Not enough arguments',
                 1,
                 'batch',
+            ],
+            [
+                'Missing URL',
+                1,
+                'import', '--no-interaction',
+            ],
+            [
+                'Missing patch name',
+                1,
+                'export', '--no-interaction',
+            ],
+            [
+                'Patch directory not found',
+                1,
+                'export', 'nonexistent-patch-' . PHP_INT_MAX, '--no-interaction',
             ]
         ];
     }

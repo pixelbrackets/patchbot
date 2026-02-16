@@ -221,36 +221,45 @@ When ready to merge, use the merge commands:
 The [patchbot-examples](https://github.com/pixelbrackets/patchbot-examples)
 repository contains ready-to-use patches you can import and customize.
 
-The patches in your project are probably specific to your organisation or
-domain. The best way to share them is to share the entire patch project as
-a Git repository.
+### Importing a Patch
 
-To share a single general-purpose patch, you can create a GitHub Gist.
+Use the `import` command to import a patch from a Gist, a Git repository,
+or a subdirectory within a repository:
+
+```bash
+# Import from a Gist
+./vendor/bin/patchbot import https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745
+
+# Import with a custom name
+./vendor/bin/patchbot import https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745 --patch-name=my-find-replace
+
+# Import from a Git repository subdirectory
+./vendor/bin/patchbot import https://github.com/pixelbrackets/patchbot-examples --path=patches/add-editorconfig
+
+# Import all patches from a Git repository
+./vendor/bin/patchbot import https://github.com/pixelbrackets/patchbot-examples
+```
+
+The command clones the source, copies the patch files into your `patches/`
+directory, and removes the `.git` directory. Review and customize the
+imported patch before applying it.
+
+### Exporting a Patch
+
+The patches in your project are probably specific to your organisation or
+domain. The best way to share them is to share the entire patch project
+as a Git repository.
+
+To share a single general-purpose patch, use the `export` command. It
+creates a GitHub Gist using the [GitHub CLI](https://cli.github.com/)
+(or prints the command if `gh` is not installed):
+
+```bash
+./vendor/bin/patchbot export add-editorconfig
+```
+
 See [this example patch](https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745)
 that adds an `.editorconfig` file to a repository.
-
-Example command using the CLI tool [gist](https://github.com/defunkt/gist)
-to upload a patch:
-
-```bash
-cd patches/add-editorconfig/
-gist -d "Patchbot Patch - Add .editorconfig to a repository" patch.php commit-message.txt
-```
-
-### Importing a Shared Patch
-
-Copy & paste all files manually to import an existing patch from another source.
-
-If the source is a Git repository then a Git clone command is sufficient.
-
-Example command importing the
-[add-editorconfig](https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745)
-patch from a Gist:
-
-```bash
-git clone --depth=1 https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745 patches/add-editorconfig/
-rm -r patches/add-editorconfig/.git
-```
 
 ## Running in GitLab CI
 

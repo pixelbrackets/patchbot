@@ -254,6 +254,34 @@ and `commit-message.txt` with the commit message and that's it.
 See the [walkthrough guide](docs/walkthrough.md#writing-patches)
 for tips on developing and testing patches.
 
+### Import and export patches
+
+Use the `import` command to import a patch from a Gist, a Git repository,
+or a subdirectory within a repository:
+
+For a quick start you could import all patches from the [patchbot examples](https://github.com/pixelbrackets/patchbot-examples)
+repository.
+
+```bash
+# Import from a Gist
+./vendor/bin/patchbot import https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745
+
+# Import with a custom name
+./vendor/bin/patchbot import https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745 --patch-name=my-find-replace
+
+# Import from a Git repository subdirectory
+./vendor/bin/patchbot import https://github.com/pixelbrackets/patchbot-examples --path=patches/add-editorconfig
+
+# Import all patches from a Git repository
+./vendor/bin/patchbot import https://github.com/pixelbrackets/patchbot-examples
+```
+
+Export a patch to share it as a GitHub Gist:
+
+```bash
+./vendor/bin/patchbot export add-editorconfig
+```
+
 ### Command and options reference
 
 **Commands**
@@ -265,6 +293,8 @@ for tips on developing and testing patches.
 | `merge` | Merge one branch into another, push |
 | `merge-many` | Merge a branch into all repositories |
 | `create` | Create a new patch |
+| `import` | Import a patch from a URL (Gist, Git repo, or subdirectory) |
+| `export` | Print sharing commands for a patch |
 | `discover` | Discover repositories from a GitLab namespace |
 
 **Options**
@@ -277,6 +307,7 @@ for tips on developing and testing patches.
 | `--source-branch` | patch | Base branch for the feature branch (default: `main`) |
 | `--branch-name` | patch, patch-many | Custom name for the feature branch |
 | `--halt-before-commit` | patch, patch-many | Pause before committing for manual review |
+| `--path` | import | Subdirectory within the repository to import |
 | `--type` | create | Patch type: `php`, `sh`, `diff`, `py` (default: `php`) |
 | `--force` | discover | Overwrite existing `repositories.json` |
 | `-v` / `-vvv` | all | Increase output verbosity |
