@@ -8,15 +8,15 @@
 [![License](https://img.shields.io/badge/license-gpl--2.0--or--later-blue.svg?style=flat-square)](https://spdx.org/licenses/GPL-2.0-or-later.html)
 [![Contribution](https://img.shields.io/badge/contributions_welcome-%F0%9F%94%B0-brightgreen.svg?labelColor=brightgreen&style=flat-square)](https://gitlab.com/pixelbrackets/patchbot/-/blob/master/CONTRIBUTING.md)
 
-Automate changes across multiple Git repositories — create branches, apply
+Automate changes across multiple Git repositories - create branches, apply
 patches, push, and open merge requests in batch.
 
 ![Screenshot](docs/screenshot.png)
 
 ## Why Patchbot?
 
-You need to apply the same change to 20 repositories. Manually that means:
-clone, branch, edit, commit, push, create merge request — times 20.
+Let's say you want to apply the same change to 20 repositories. Manually that means:
+clone, branch, edit, commit, push, create merge request - times 20.
 
 Maybe you need to rename a file in every repo, replace a deprecated URL in
 all docs, add a package to all projects or run a migration script. Nothing a plain
@@ -25,7 +25,7 @@ but something that can be automated with a script.
 
 Patchbot does the repetitive parts for you. Write the change once as a patch
 script, point Patchbot at your repositories, and let it create feature branches,
-commit, push, and optionally open merge requests — across all of them.
+commit, push, and optionally open merge requests across all of them.
 
 Patchbot runs centrally on your machine or CI server and pushes changes out to
 repositories. It is not a service that repositories pull from or run on their own.
@@ -97,17 +97,21 @@ for details on configuring access.
 
 Real world use cases for Patchbot include:
 
-- Add a PHP package to all projects (e.g. `composer require vendor/package`)
-- Add or update PHP-CS-Fixer rules across all projects
-- Introduce an `.editorconfig` file to all repositories
-- Replace copyright year strings in files across many repos, even when the location varies
-- Rename a vendor or company name after rebranding
-- Rename a file due to a new naming convention (e.g. `LICENSE` → `LICENSE.txt`)
-- Run database migration scripts across all projects
-- Update a subset of packages on a CI schedule
-- Run follow-up tasks after package updates (config changes, renamed classes, updated imports)
+- [Find and replace](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/find-and-replace) strings across all files (URLs, class names, config values)
+- [Add a PHP package](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/add-php-package) to all projects (e.g. `composer require vendor/package`)
+- [Add or update PHP-CS-Fixer rules](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/update-php-cs-fixer-rules) across all projects
+- [Introduce an `.editorconfig`](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/add-editorconfig) file to all repositories
+- [Add `.gitattributes`](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/add-gitattributes) with export-ignore rules for smaller Composer packages
+- [Replace copyright year](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/replace-copyright-year) strings in files across many repos
+- [Rename a vendor or company name](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/rename-vendor-name) after rebranding
+- [Rename a file](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/rename-file) due to a new naming convention (e.g. `LICENSE` → `LICENSE.txt`)
+- [Remove deprecated files](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/remove-deprecated-files) or config keys that are no longer needed
+- [Update a subset of packages](https://github.com/pixelbrackets/patchbot-examples/tree/main/patches/typo3-minor-update) on a CI schedule
 - Add or update CI configuration files (e.g. `.gitlab-ci.yml`) across all projects
-- Remove deprecated files or config keys that are no longer needed
+- Run database migration scripts across all projects  
+- Run follow-up tasks after package updates (config changes, renamed classes, updated imports)
+
+(See the [patchbot-examples](https://github.com/pixelbrackets/patchbot-examples) repository for some ready-to-use patches)
 
 ### Patch structure
 

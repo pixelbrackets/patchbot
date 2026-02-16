@@ -60,8 +60,10 @@ my-patches/
 
 ## 3. Write a Patch
 
-Create a new patch directory. The interactive wizard guides you
-through the required options.
+Browse the [patchbot-examples](https://github.com/pixelbrackets/patchbot-examples)
+repository for ready-to-use patches you can import and customize.
+
+To create a new patch from scratch, use the interactive wizard:
 
 ```bash
 ./vendor/bin/patchbot create
@@ -111,6 +113,36 @@ bash /path/to/my-patches/patches/add-changelog-file/patch.sh
 
 Check the result, adjust the script, repeat. When the patch works as
 expected, use Patchbot to distribute it.
+
+#### Writing idempotent patches
+
+A patch script should be safe to run multiple times on the same repository.
+If the change was already applied, the script should skip gracefully and
+exit with code `0` (success). Patchbot detects "nothing to change" by
+checking `git status` after the script runs — if no files changed, the
+repository is skipped automatically.
+
+Use a guard clause at the top of your script to exit early when the
+patch does not apply. Do not exit with an error code, since the patch
+was not needed rather than broken.
+
+```php
+<?php
+// PHP: exit early with success
+if (file_exists('.editorconfig')) {
+    echo 'EditorConfig already exists, skipping' . PHP_EOL;
+    exit(0);
+}
+```
+
+```bash
+#!/bin/bash
+# Shell: exit early with success
+if [ ! -f "composer.json" ]; then
+    echo "No composer.json found, skipping"
+    exit 0
+fi
+```
 
 ## 4. Apply a Patch
 
@@ -186,14 +218,19 @@ When ready to merge, use the merge commands:
 
 ## 7. Share Patches
 
+The [patchbot-examples](https://github.com/pixelbrackets/patchbot-examples)
+repository contains ready-to-use patches you can import and customize.
+
 The patches in your project are probably specific to your organisation or
 domain. The best way to share them is to share the entire patch project as
 a Git repository.
 
 To share a single general-purpose patch, you can create a GitHub Gist.
+See [this example patch](https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745)
+that adds an `.editorconfig` file to a repository.
 
 Example command using the CLI tool [gist](https://github.com/defunkt/gist)
-to upload the `add-editorconfig` patch:
+to upload a patch:
 
 ```bash
 cd patches/add-editorconfig/
@@ -206,7 +243,9 @@ Copy & paste all files manually to import an existing patch from another source.
 
 If the source is a Git repository then a Git clone command is sufficient.
 
-Example command importing a Gist as patch `add-editorconfig`:
+Example command importing the
+[add-editorconfig](https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745)
+patch from a Gist:
 
 ```bash
 git clone --depth=1 https://gist.github.com/pixelbrackets/98664b79c788766e4248f16e268c5745 patches/add-editorconfig/
