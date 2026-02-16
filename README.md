@@ -64,7 +64,7 @@ cd my-patches
 # Apply the patch to a repository
 ./vendor/bin/patchbot patch my-first-patch git@gitlab.com:user/repo.git
 # Or apply to all repositories in repositories.json
-./vendor/bin/patchbot patch-many my-first-patch --dry-run
+./vendor/bin/patchbot patch:many my-first-patch --dry-run
 ```
 
 ## Requirements
@@ -176,21 +176,21 @@ commits the changes, and pushes the branch to the remote.
 Apply a patch to all repositories listed in `repositories.json`:
 
 ```bash
-./vendor/bin/patchbot patch-many <patch-name>
+./vendor/bin/patchbot patch:many <patch-name>
 ```
 
 ```bash
 # Apply to all repositories
-./vendor/bin/patchbot patch-many update-changelog
+./vendor/bin/patchbot patch:many update-changelog
 
 # Filter by path pattern
-./vendor/bin/patchbot patch-many update-changelog --filter="path:my-org/*"
+./vendor/bin/patchbot patch:many update-changelog --filter="path:my-org/*"
 
 # Filter by GitLab topic
-./vendor/bin/patchbot patch-many update-changelog --filter="topic:php"
+./vendor/bin/patchbot patch:many update-changelog --filter="topic:php"
 
 # Combine filters, create MRs, and preview first
-./vendor/bin/patchbot patch-many update-changelog --filter="topic:php" --create-mr --dry-run
+./vendor/bin/patchbot patch:many update-changelog --filter="topic:php" --create-mr --dry-run
 ```
 
 After batch processing completes, a summary shows how many repositories were
@@ -229,14 +229,14 @@ tested by CI before merging. Use the merge commands when ready:
 ./vendor/bin/patchbot merge <source-branch> <target-branch> <repository-url>
 
 # Merge a branch into the default branch for all repositories
-./vendor/bin/patchbot merge-many <source-branch>
+./vendor/bin/patchbot merge:many <source-branch>
 ```
 
 ```bash
 # Examples
 ./vendor/bin/patchbot merge feature-add-license main git@gitlab.com:user/repo.git
-./vendor/bin/patchbot merge-many feature-add-phpcs-rules
-./vendor/bin/patchbot merge-many feature-add-phpcs-rules --dry-run
+./vendor/bin/patchbot merge:many feature-add-phpcs-rules
+./vendor/bin/patchbot merge:many feature-add-phpcs-rules --dry-run
 ```
 
 ### Create a new patch
@@ -289,9 +289,9 @@ Export a patch to share it as a GitHub Gist:
 | Command | Description |
 |---------|-------------|
 | `patch` | Apply changes, commit, push |
-| `patch-many` | Apply a patch to all repositories |
+| `patch:many` | Apply a patch to all repositories |
 | `merge` | Merge one branch into another, push |
-| `merge-many` | Merge a branch into all repositories |
+| `merge:many` | Merge a branch into all repositories |
 | `create` | Create a new patch |
 | `import` | Import a patch from a URL (Gist, Git repo, or subdirectory) |
 | `export` | Print sharing commands for a patch |
@@ -301,12 +301,12 @@ Export a patch to share it as a GitHub Gist:
 
 | Option | Available in | Description |
 |--------|--------------|-------------|
-| `--dry-run` | patch, merge, patch-many, merge-many | Preview without making changes |
-| `--create-mr` | patch, patch-many | Create GitLab merge request after pushing |
-| `--filter` | patch-many, merge-many | Filter repositories by `path:glob` or `topic:name` |
+| `--dry-run` | patch, merge, patch:many, merge:many | Preview without making changes |
+| `--create-mr` | patch, patch:many | Create GitLab merge request after pushing |
+| `--filter` | patch:many, merge:many | Filter repositories by `path:glob` or `topic:name` |
 | `--source-branch` | patch | Base branch for the feature branch (default: `main`) |
-| `--branch-name` | patch, patch-many | Custom name for the feature branch |
-| `--halt-before-commit` | patch, patch-many | Pause before committing for manual review |
+| `--branch-name` | patch, patch:many | Custom name for the feature branch |
+| `--halt-before-commit` | patch, patch:many | Pause before committing for manual review |
 | `--path` | import | Subdirectory within the repository to import |
 | `--type` | create | Patch type: `php`, `sh`, `diff`, `py` (default: `php`) |
 | `--force` | discover | Overwrite existing `repositories.json` |

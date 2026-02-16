@@ -63,14 +63,13 @@ class RoboFile extends \Robo\Tasks
         $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
         /** @noinspection NonSecureUniqidUsageInspection */
         $options['branch-name'] = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
-        $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
 
         // Print summary
         $this->io()->section($options['dry-run'] ? 'Patch (Dry Run)' : 'Patch');
         $this->io()->listing([
             'Patch: ' . $options['patch-name'],
             'Branch: ' . $options['branch-name'],
-            'Repository: ' . $repositoryName . ' (' . $options['repository-url'] . ')'
+            'Repository: ' . pathinfo($options['repository-url'], PATHINFO_FILENAME) . ' (' . $options['repository-url'] . ')'
         ]);
 
         if ($options['dry-run']) {
@@ -161,14 +160,13 @@ class RoboFile extends \Robo\Tasks
         }
 
         $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
-        $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
 
         // Print summary
         $this->io()->section($options['dry-run'] ? 'Merge (Dry Run)' : 'Merge');
         $this->io()->listing([
             'Source Branch: ' . $options['source'],
             'Target Branch: ' . $options['target'],
-            'Repository: ' . $repositoryName . ' (' . $options['repository-url'] . ')'
+            'Repository: ' . pathinfo($options['repository-url'], PATHINFO_FILENAME) . ' (' . $options['repository-url'] . ')'
         ]);
 
         if ($options['dry-run']) {
@@ -220,11 +218,11 @@ class RoboFile extends \Robo\Tasks
         $patchName = $patchName ?: $options['patch-name'];
 
         // Interactive wizard: prompt for patch name when missing
+        if (empty($patchName) && !$this->io()->input()->isInteractive()) {
+            $this->io()->error('Missing arguments');
+            return 1;
+        }
         if (empty($patchName)) {
-            if (!$this->io()->input()->isInteractive()) {
-                $this->io()->error('Missing arguments');
-                return 1;
-            }
             $patchName = $this->ask('Patch name (e.g. "Add CHANGELOG file")');
             if (empty($patchName)) {
                 $this->io()->error('Patch name is required');
@@ -236,13 +234,12 @@ class RoboFile extends \Robo\Tasks
         $patchFiles = ['php' => 'patch.php', 'sh' => 'patch.sh', 'diff' => 'patch.diff', 'py' => 'patch.py'];
         $type = $options['type'];
 
+        if (empty($type) && $this->io()->input()->isInteractive()) {
+            $question = new ChoiceQuestion('Patch type', array_keys($patchFiles), 0);
+            $type = $this->io()->askQuestion($question);
+        }
         if (empty($type)) {
-            if ($this->io()->input()->isInteractive()) {
-                $question = new ChoiceQuestion('Patch type', array_keys($patchFiles), 0);
-                $type = $this->io()->askQuestion($question);
-            } else {
-                $type = 'php';
-            }
+            $type = 'php';
         }
 
         if (!isset($patchFiles[$type])) {
@@ -643,11 +640,10 @@ class RoboFile extends \Robo\Tasks
 
         foreach ($repositories as $repository) {
             if ($isDryRun) {
-                $dryRunMsg = '[DRY-RUN] Would patch: ' . $repository['path_with_namespace'] . ' (' . $repository['default_branch'] . ')';
+                $this->io()->text('[DRY-RUN] Would patch: ' . $repository['path_with_namespace'] . ' (' . $repository['default_branch'] . ')');
                 if ($options['create-mr']) {
-                    $dryRunMsg .= ' and create MR';
+                    $this->io()->text('[DRY-RUN] Would create MR');
                 }
-                $this->io()->text($dryRunMsg);
                 continue;
             }
             chdir($workingDirectory);
@@ -756,9 +752,9 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * Run batch-mode commands
+     * Run batch-mode commands - Deprecated, Use patch:many or merge:many instead
      *
-     * @deprecated Use patch-many or merge-many instead
+     * @deprecated Use patch:many or merge:many instead
      * @param string $batchCommand Name of command to run in batch mode (patch or merge)
      * @param array $options
      * @option $working-directory Working directory to check out repositories
@@ -785,152 +781,27 @@ class RoboFile extends \Robo\Tasks
         'create-mr' => false,
     ]): int
     {
-        // Deprecation warning
-        $this->io()->warning('The "batch" command is deprecated. Use "patch-many" or "merge-many" instead.');
-
-        $workingDirectory = getcwd();
-        $configFile = 'repositories.json';
-
-        if (false === is_file($configFile)) {
-            $this->io()->error('Can not find file "' . $configFile . '". Run "patchbot discover" first.');
-            return 1;
-        }
-
-        // Parse JSON config
-        $jsonContent = file_get_contents($configFile);
-        $config = json_decode($jsonContent, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->io()->error('Invalid JSON in ' . $configFile . ': ' . json_last_error_msg());
-            return 1;
-        }
-
-        $repositories = $config['repositories'] ?? [];
-
-        if (empty($repositories)) {
-            $this->io()->warning('No repositories found in ' . $configFile);
-            return 0;
-        }
-
-        // Apply filters
-        $filters = is_array($options['filter']) ? $options['filter'] : [$options['filter']];
-        $filters = array_filter($filters); // remove empty values
-        if (!empty($filters)) {
-            $repositories = $this->filterRepositories($repositories, $filters);
-            if (empty($repositories)) {
-                $this->io()->warning('No repositories match the filter criteria');
-                return 0;
-            }
-        }
-
-        $isDryRun = $options['dry-run'];
-
-        if ($isDryRun) {
-            $this->io()->section('Dry Run');
-        }
-
-        $results = ['success' => 0, 'skipped' => 0, 'failed' => 0];
+        $this->io()->warning('The "batch" command is deprecated. Use "patch:many" or "merge:many" instead.');
 
         if ($batchCommand === 'patch') {
-            $patchSourceDirectory = ($options['patch-source-directory'] ?? getcwd() . '/patches') . '/';
-            $branchName = $options['branch-name'] ?? date('Ymd') . '_patchbot_' . uniqid();
-
-            foreach ($repositories as $repository) {
-                if ($isDryRun) {
-                    $dryRunMsg = '[DRY-RUN] Would patch: ' . $repository['path_with_namespace'] . ' (' . $repository['default_branch'] . ')';
-                    if ($options['create-mr']) {
-                        $dryRunMsg .= ' and create MR';
-                    }
-                    $this->io()->text($dryRunMsg);
-                    continue;
-                }
-                chdir($workingDirectory); // reset working directory
-                try {
-                    $result = $this->runPatch([
-                        'repository-url' => $repository['clone_url_ssh'],
-                        'working-directory' => $options['working-directory'] ?? $this->getTemporaryDirectory(),
-                        'patch-source-directory' => $patchSourceDirectory,
-                        'patch-name' => $options['patch-name'],
-                        'source-branch' => $repository['default_branch'],
-                        'branch-name' => $branchName,
-                        'halt-before-commit' => $options['halt-before-commit'],
-                    ]);
-                    if ($result) {
-                        $results['success']++;
-                        $this->io()->success('Patched: ' . $repository['path_with_namespace']);
-
-                        // Create merge request if requested
-                        if ($options['create-mr']) {
-                            $commitMessage = file_get_contents($patchSourceDirectory . $options['patch-name'] . '/commit-message.txt');
-                            $mrUrl = $this->createMergeRequest(
-                                $repository['clone_url_ssh'],
-                                $branchName,
-                                $repository['default_branch'],
-                                $commitMessage
-                            );
-                            if ($mrUrl) {
-                                $this->io()->text('  MR: ' . $mrUrl);
-                            }
-                        }
-                    } else {
-                        $results['skipped']++;
-                        $this->io()->text('Skipped: ' . $repository['path_with_namespace'] . ' (no changes)');
-                    }
-                } catch (\Exception $e) {
-                    $results['failed']++;
-                    $this->io()->error('Failed: ' . $repository['path_with_namespace'] . ' - ' . $e->getMessage());
-                }
-            }
+            return $this->patchMany($options['patch-name'], [
+                'branch-name' => $options['branch-name'],
+                'halt-before-commit' => $options['halt-before-commit'],
+                'dry-run' => $options['dry-run'],
+                'filter' => $options['filter'],
+                'create-mr' => $options['create-mr'],
+            ]);
         }
 
         if ($batchCommand === 'merge') {
-            foreach ($repositories as $repository) {
-                if ($isDryRun) {
-                    $this->io()->text('[DRY-RUN] Would merge: ' . $options['source'] . ' -> ' . $repository['default_branch'] . ' in ' . $repository['path_with_namespace']);
-                    continue;
-                }
-                chdir($workingDirectory); // reset working directory
-                try {
-                    $result = $this->runMerge([
-                        'repository-url' => $repository['clone_url_ssh'],
-                        'working-directory' => $options['working-directory'] ?? $this->getTemporaryDirectory(),
-                        'source' => $options['source'],
-                        'target' => $repository['default_branch'],
-                    ]);
-                    if ($result) {
-                        $results['success']++;
-                        $this->io()->success('Merged: ' . $repository['path_with_namespace']);
-                    } else {
-                        $results['skipped']++;
-                        $this->io()->text('Skipped: ' . $repository['path_with_namespace'] . ' (already up-to-date)');
-                    }
-                } catch (\Exception $e) {
-                    $results['failed']++;
-                    $this->io()->error('Failed: ' . $repository['path_with_namespace'] . ' - ' . $e->getMessage());
-                }
-            }
+            return $this->mergeMany($options['source'] ?? '', [
+                'dry-run' => $options['dry-run'],
+                'filter' => $options['filter'],
+            ]);
         }
 
-        // Print summary
-        $this->io()->newLine();
-        if ($isDryRun) {
-            $this->io()->text(count($repositories) . ' repositories would be processed');
-        } else {
-            $total = $results['success'] + $results['skipped'] + $results['failed'];
-            $this->io()->section('Summary');
-            $this->io()->text($total . ' repositories processed');
-            if ($results['success'] > 0) {
-                $this->io()->text('  ✓ ' . $results['success'] . ' ' . ($batchCommand === 'patch' ? 'patched' : 'merged'));
-            }
-            if ($results['skipped'] > 0) {
-                $this->io()->text('  - ' . $results['skipped'] . ' skipped (no changes)');
-            }
-            if ($results['failed'] > 0) {
-                $this->io()->text('  ✗ ' . $results['failed'] . ' failed');
-            }
-        }
-
-        return $results['failed'] > 0 ? 1 : 0;
+        $this->io()->error('Unknown batch command: ' . $batchCommand . '. Use "patch" or "merge".');
+        return 1;
     }
 
     /**

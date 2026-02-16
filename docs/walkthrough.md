@@ -178,17 +178,17 @@ cp .env.example .env
 Then apply the patch to all discovered repositories:
 
 ```bash
-./vendor/bin/patchbot patch-many add-changelog-file
+./vendor/bin/patchbot patch:many add-changelog-file
 ```
 
 Use filters to target specific repositories:
 
 ```bash
 # Only repositories matching a path pattern
-./vendor/bin/patchbot patch-many add-changelog-file --filter="path:mygroup/typo3-*"
+./vendor/bin/patchbot patch:many add-changelog-file --filter="path:mygroup/typo3-*"
 
 # Only repositories with a specific GitLab topic
-./vendor/bin/patchbot patch-many add-changelog-file --filter="topic:php"
+./vendor/bin/patchbot patch:many add-changelog-file --filter="topic:php"
 ```
 
 After batch processing completes, a summary shows how many repositories were
@@ -203,7 +203,7 @@ before merging.
 To create a GitLab merge request automatically, add `--create-mr`:
 
 ```bash
-./vendor/bin/patchbot patch-many add-changelog-file --create-mr
+./vendor/bin/patchbot patch:many add-changelog-file --create-mr
 ```
 
 When ready to merge, use the merge commands:
@@ -213,7 +213,7 @@ When ready to merge, use the merge commands:
 ./vendor/bin/patchbot merge feature-add-changelog-file main git@gitlab.com:user/repo.git
 
 # Merge across all repositories
-./vendor/bin/patchbot merge-many feature-add-changelog-file
+./vendor/bin/patchbot merge:many feature-add-changelog-file
 ```
 
 ## 7. Share Patches
