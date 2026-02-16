@@ -1,0 +1,4 @@
+Add example file
+
+This is an example commit message for a patch
+that adds a new feature to the project.

@@ -4,6 +4,7 @@ namespace Pixelbrackets\Patchbot;
 
 use Cocur\Slugify\Slugify;
 use Pixelbrackets\Patchbot\Discovery\GitLabDiscovery;
+use Pixelbrackets\Patchbot\PatchProvider\PatchProviderResolver;
 use Robo\Contract\VerbosityThresholdInterface;
 use Robo\Exception\TaskException;
 
@@ -73,7 +74,7 @@ class RoboFile extends \Robo\Tasks
 
         if ($options['dry-run']) {
             $this->io()->text('[DRY-RUN] Would clone repository and create branch');
-            $this->io()->text('[DRY-RUN] Would run patch script: ' . $options['patch-source-directory'] . $options['patch-name'] . '/patch.php');
+            $this->io()->text('[DRY-RUN] Would run patch script in: ' . $options['patch-source-directory'] . $options['patch-name'] . '/');
             $this->io()->text('[DRY-RUN] Would commit and push changes');
             if ($options['create-mr']) {
                 $this->io()->text('[DRY-RUN] Would create merge request');
@@ -718,9 +719,13 @@ class RoboFile extends \Robo\Tasks
         // Patch!
         $this->say('Run patch script');
         try {
-            $patchFile = $options['patch-source-directory'] . $options['patch-name'] . '/patch.php';
-            $output = shell_exec('php ' . escapeshellcmd($patchFile));
+            $patchDir = $options['patch-source-directory'] . $options['patch-name'];
+            $resolver = new PatchProviderResolver();
+            $provider = $resolver->resolve($patchDir);
+            $output = $provider->execute($patchDir, $currentDirectory);
             $this->say($output);
+        } catch (\RuntimeException $e) {
+            throw new TaskException($this, $e->getMessage());
         } catch (Exception $e) {
             throw new TaskException($this, 'Patch script execution failed');
         }

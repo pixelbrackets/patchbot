@@ -68,8 +68,24 @@ Create a new patch directory:
 
 This generates `patches/add-changelog-file/` with two files to edit:
 
-- `patch.php` — The PHP script that makes the actual changes
+- `patch.php` — The script that makes the actual changes
 - `commit-message.txt` — The commit message used when applying the patch
+
+#### Supported patch file types
+
+Patchbot detects the patch type by filename. Replace the generated `patch.php`
+with any of the supported types:
+
+| File | Language | Execution |
+|------|----------|-----------|
+| `patch.php` | PHP | `php patch.php` |
+| `patch.sh` | Shell | `bash patch.sh` |
+| `patch.diff` | Git diff | `git apply patch.diff` |
+| `patch.py` | Python | `python3 patch.py` |
+
+Each patch directory must contain exactly one patch file. Using multiple patch
+files in the same directory (e.g. both `patch.php` and `patch.sh`) is not
+allowed and will result in an error.
 
 Patchbot runs the patch script isolated in the root directory of the cloned
 target repository. This means you can develop the script incrementally by
@@ -78,6 +94,8 @@ running it directly in any project directory:
 ```bash
 cd /path/to/some-project
 php /path/to/my-patches/patches/add-changelog-file/patch.php
+# or
+bash /path/to/my-patches/patches/add-changelog-file/patch.sh
 ```
 
 Check the result, adjust the script, repeat. When the patch works as

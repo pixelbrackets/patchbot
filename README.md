@@ -27,6 +27,9 @@ Patchbot does the repetitive parts for you. Write the change once as a patch
 script, point Patchbot at your repositories, and let it create feature branches,
 commit, push, and optionally open merge requests — across all of them.
 
+Patchbot runs centrally on your machine or CI server and pushes changes out to
+repositories. It is not a service that repositories pull from or run on their own.
+
 Saving time, preventing careless mistakes and avoiding monotonous work.
 
 Take a look at this
@@ -41,6 +44,7 @@ to see how Patchbot helps reduce technical debt across Git repositories.
 - Repository filtering - Target specific repos by path pattern or GitLab topic (`--filter`)
 - Dry-run mode - Preview what would happen without making changes (`--dry-run`)
 - Custom git user - Push as a bot user instead of your personal account
+- Multi-language patches - Write patch scripts in PHP, Shell, Python, or as Git diffs
 - CI-ready - Run Patchbot as a scheduled GitLab CI pipeline
 
 ## Quick Start
@@ -59,6 +63,8 @@ cd my-patches
 
 # Apply the patch to a repository
 ./vendor/bin/patchbot patch my-first-patch git@gitlab.com:user/repo.git
+# Or apply to all repositories in repositories.json
+./vendor/bin/patchbot patch-many my-first-patch --dry-run
 ```
 
 ## Requirements
@@ -92,7 +98,7 @@ for details on configuring access.
 ### Patch structure
 
 Patchbot organizes patches in the `patches/` directory. Each patch directory
-contains a PHP script (`patch.php`) and a commit message (`commit-message.txt`):
+contains a patch file and a commit message (`commit-message.txt`):
 
 ```
 patches/
@@ -101,12 +107,22 @@ patches/
 |   `-- patch.php
 `-- update-changelog/
     |-- commit-message.txt
-    `-- patch.php
+    `-- patch.sh
 ```
 
+The patch file type is detected automatically by filename. Each patch directory
+must contain exactly one of the following:
+
+| File | Language | Execution |
+|------|----------|-----------|
+| `patch.php` | PHP | `php patch.php` |
+| `patch.sh` | Shell | `bash patch.sh` |
+| `patch.diff` | Git diff | `git apply patch.diff` |
+| `patch.py` | Python | `python3 patch.py` |
+
 The patch script runs in the root directory of the cloned target repository.
-You can develop it incrementally by running `php <path-to-patch>/patch.php`
-directly in any project directory.
+You can develop it incrementally by running it directly in any project directory,
+for example `php <path-to-patch>/patch.php` or `bash <path-to-patch>/patch.sh`.
 
 ### Apply a patch
 

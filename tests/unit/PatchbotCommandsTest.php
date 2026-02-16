@@ -14,6 +14,7 @@ class PatchbotCommandsTest extends TestCase
     protected array $commandClass;
 
     protected static string $bareRepository = '';
+    protected static string $projectRoot = '';
 
     /**
      * Set up a bare local Git repository
@@ -24,6 +25,9 @@ class PatchbotCommandsTest extends TestCase
      */
     public static function loadFixtures(): void
     {
+        if (empty(self::$projectRoot)) {
+            self::$projectRoot = dirname(__DIR__, 2);
+        }
         if (empty(self::$bareRepository)) {
             self::$bareRepository = sys_get_temp_dir() . '/' . 'patchbot-source-repository-' . uniqid('', true) . '.git';
             $tmpDirectory = sys_get_temp_dir() . '/' . 'patchbot-source-repository-clone-' . uniqid('', true) . '/';
@@ -134,7 +138,8 @@ class PatchbotCommandsTest extends TestCase
             [
                 'nothing to change',
                 0,
-                'patch', 'template', 'file://' . self::$bareRepository
+                'patch', 'template', 'file://' . self::$bareRepository,
+                '--patch-source-directory=' . self::$projectRoot . '/patches'
             ]
         ];
     }
