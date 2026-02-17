@@ -25,7 +25,7 @@ class RoboFile extends \Robo\Tasks
      * @param array $options
      * @option $patch-name Name of the patch directory (alternative to positional arg)
      * @option $repository-url URI of Git repository (alternative to positional arg)
-     * @option $working-directory Working directory to check out repositories
+     * @option $working-directory Deprecated: Working directory (uses workspace cache now)
      * @option $patch-source-directory Source directory for all collected patches
      * @option $source-branch Name of the branch to create a new branch upon
      * @option $branch-name Name of the feature branch to be created
@@ -60,7 +60,6 @@ class RoboFile extends \Robo\Tasks
         }
 
         $options['patch-source-directory'] = ($options['patch-source-directory'] ?? getcwd() . '/patches') . '/';
-        $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
         /** @noinspection NonSecureUniqidUsageInspection */
         $options['branch-name'] = $options['branch-name'] ?? date('Ymd') . '_' . 'patchbot_' . uniqid();
 
@@ -128,7 +127,7 @@ class RoboFile extends \Robo\Tasks
      * @option $source Source branch name (alternative to positional arg)
      * @option $target Target branch name (alternative to positional arg)
      * @option $repository-url URI of Git repository (alternative to positional arg)
-     * @option $working-directory Working directory to check out repositories
+     * @option $working-directory Deprecated: Working directory (uses workspace cache now)
      * @option $dry-run Show what would be done without executing
      * @return int exit code
      * @throws TaskException
@@ -158,8 +157,6 @@ class RoboFile extends \Robo\Tasks
             $this->io()->error('Missing arguments');
             return 1;
         }
-
-        $options['working-directory'] = $options['working-directory'] ?? $this->getTemporaryDirectory();
 
         // Print summary
         $this->io()->section($options['dry-run'] ? 'Merge (Dry Run)' : 'Merge');
@@ -650,7 +647,6 @@ class RoboFile extends \Robo\Tasks
             try {
                 $result = $this->runPatch([
                     'repository-url' => $repository['clone_url_ssh'],
-                    'working-directory' => $this->getTemporaryDirectory(),
                     'patch-source-directory' => $patchSourceDirectory,
                     'patch-name' => $patchName,
                     'source-branch' => $repository['default_branch'],
@@ -730,7 +726,6 @@ class RoboFile extends \Robo\Tasks
             try {
                 $result = $this->runMerge([
                     'repository-url' => $repository['clone_url_ssh'],
-                    'working-directory' => $this->getTemporaryDirectory(),
                     'source' => $sourceBranch,
                     'target' => $repository['default_branch'],
                 ]);
@@ -813,26 +808,10 @@ class RoboFile extends \Robo\Tasks
      */
     protected function runPatch(array $options): bool
     {
-        $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
-
-        // Set working directory
-        $this->say('Switch to working directory ' . $options['working-directory']);
-        chdir($options['working-directory']);
-
-        // Clone repo or use existing repository in workspace
-        if (false === is_dir($repositoryName)) {
-            $this->say('Clone repository');
-            $result = $this->taskGitStack()
-                ->cloneRepo($options['repository-url'], $repositoryName)
-                ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
-                ->run();
-            if ($result->wasSuccessful() !== true) {
-                throw new TaskException($this, 'Cloning failed - '
-                    . 'Maybe wrong URI or missing access rights');
-            }
-        }
-        chdir($repositoryName);
-        $currentDirectory = getcwd();
+        $currentDirectory = $this->resolveWorkingDirectory(
+            $options['repository-url'],
+            $options['working-directory'] ?? null
+        );
         $this->say('Use repository in ' . $currentDirectory);
 
         // Checkout main branch, update, create new feature branch
@@ -926,26 +905,10 @@ class RoboFile extends \Robo\Tasks
      */
     protected function runMerge(array $options): bool
     {
-        $repositoryName = pathinfo($options['repository-url'], PATHINFO_FILENAME);
-
-        // Set working directory
-        $this->say('Switch to working directory ' . $options['working-directory']);
-        chdir($options['working-directory']);
-
-        // Clone repo or use existing repository
-        if (false === is_dir($repositoryName)) {
-            $this->say('Clone repository');
-            $result = $this->taskGitStack()
-                ->cloneRepo($options['repository-url'], $repositoryName)
-                ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
-                ->run();
-            if ($result->wasSuccessful() !== true) {
-                throw new TaskException($this, 'Cloning failed - '
-                    . 'Maybe wrong URI or missing access rights');
-            }
-        }
-        chdir($repositoryName);
-        $currentDirectory = getcwd();
+        $currentDirectory = $this->resolveWorkingDirectory(
+            $options['repository-url'],
+            $options['working-directory'] ?? null
+        );
         $this->say('Use repository in ' . $currentDirectory);
 
         // Fetch branches - <source> & <target>
@@ -1008,6 +971,131 @@ class RoboFile extends \Robo\Tasks
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
         return $result['path'] ?? '';
+    }
+
+    /**
+     * Resolve general Patchbot cache directory
+     *
+     * Within the directory repositories are cloned and cached for patching.
+     * The working directory is resolved from the cache directory later.
+     *
+     * Resolution order:
+     * - Environment variable (PATCHBOT_CACHE_DIR)
+     * - Local user cache directory ($XDG_CACHE_HOME/patchbot or ~/.cache/patchbot)
+     * - Temporary folder (/tmp/patchbot)
+     *
+     * @return string Cache directory path
+     */
+    protected function getCacheDirectory(): string
+    {
+        $envDir = getenv('PATCHBOT_CACHE_DIR');
+        if (!empty($envDir)) {
+            return $envDir;
+        }
+
+        $xdgCache = getenv('XDG_CACHE_HOME') ?: (getenv('HOME') . '/.cache');
+        $xdgDir = $xdgCache . '/patchbot';
+        if (is_writable($xdgCache) || is_writable($xdgDir)) {
+            return $xdgDir;
+        }
+
+        return sys_get_temp_dir() . '/patchbot';
+    }
+
+    /**
+     * Parse repository URL into hostname and project path
+     *
+     * Supports SSH, HTTPS, and file:// URL formats:
+     *
+     * @param string $url Repository URL
+     * @return array{hostname: string, path: string} Parsed URL parts
+     */
+    protected function parseRepositoryUrl(string $url): array
+    {
+        // SSH format: git@example.com:user/repo.git
+        if (preg_match('/^git@([^:]+):(.+?)(?:\.git)?$/', $url, $matches)) {
+            return ['hostname' => $matches[1], 'path' => $matches[2]];
+        }
+
+        // HTTPS format: https://example.com/user/repo.git
+        if (preg_match('/^https?:\/\/([^\/]+)\/(.+?)(?:\.git)?$/', $url, $matches)) {
+            return ['hostname' => $matches[1], 'path' => $matches[2]];
+        }
+
+        // Local file:// format: file:///path/to/repo.git
+        if (preg_match('/^file:\/\/(.+?)(?:\.git)?$/', $url, $matches)) {
+            return ['hostname' => 'local', 'path' => $matches[1]];
+        }
+
+        // Fallback: use filename
+        return ['hostname' => 'local', 'path' => pathinfo($url, PATHINFO_FILENAME)];
+    }
+
+    /**
+     * Resolve working directory for a repository (clone or reuse)
+     *
+     * Uses workspace cache by default. When --working-directory is set
+     * (deprecated), falls back to the old behavior.
+     *
+     * @param string $repositoryUrl Repository clone URL
+     * @param string|null $workingDirectory Deprecated --working-directory option
+     * @return string The resolved repository directory (cwd is changed to it)
+     * @throws TaskException
+     */
+    protected function resolveWorkingDirectory(string $repositoryUrl, ?string $workingDirectory = null): string
+    {
+        // Deprecated: --working-directory option (use workspace cache instead)
+        if (!empty($workingDirectory)) {
+            $this->io()->warning('The --working-directory option is deprecated and will be removed in a future version. '
+                . 'Repositories are now cached automatically.');
+            $repositoryName = pathinfo($repositoryUrl, PATHINFO_FILENAME);
+            chdir($workingDirectory);
+            if (false === is_dir($repositoryName)) {
+                $this->cloneRepository($repositoryUrl, $repositoryName);
+            }
+            chdir($repositoryName);
+            return getcwd();
+        }
+
+        $cacheDir = $this->getCacheDirectory() . '/repositories';
+        $urlParts = $this->parseRepositoryUrl($repositoryUrl);
+        $repoWorkspace = $cacheDir . '/' . $urlParts['hostname'] . '/' . $urlParts['path'];
+        $this->say('Working directory: ' . $repoWorkspace);
+
+        // Clone repo or use existing repository in workspace cache
+        if (false === is_dir($repoWorkspace)) {
+            $parentDir = dirname($repoWorkspace);
+            if (!is_dir($parentDir)) {
+                mkdir($parentDir, 0777, true);
+            }
+            $this->cloneRepository($repositoryUrl, $repoWorkspace);
+        } else {
+            // Clean up stale state from previous runs
+            chdir($repoWorkspace);
+            shell_exec('git checkout -- .');
+            shell_exec('git clean -fd');
+        }
+        chdir($repoWorkspace);
+        return getcwd();
+    }
+
+    /**
+     * Clone a repository into a target directory
+     *
+     * @param string $repositoryUrl Repository clone URL
+     * @param string $targetDirectory Directory to clone into
+     * @throws TaskException
+     */
+    protected function cloneRepository(string $repositoryUrl, string $targetDirectory): void
+    {
+        $this->say('Clone repository');
+        $result = $this->taskGitStack()
+            ->cloneRepo($repositoryUrl, $targetDirectory)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+        if ($result->wasSuccessful() !== true) {
+            throw new TaskException($this, 'Cloning failed - Check URI or access rights');
+        }
     }
 
     /**
@@ -1076,7 +1164,8 @@ class RoboFile extends \Robo\Tasks
         }
 
         $gitlabUrl = getenv('GITLAB_URL') ?: 'https://gitlab.com';
-        $projectPath = $this->extractProjectPath($repositoryUrl);
+        $repositoryUrlParts = $this->parseRepositoryUrl($repositoryUrl);
+        $projectPath = $repositoryUrlParts['path'];
 
         if (empty($projectPath)) {
             $this->io()->warning('Cannot create MR: unable to extract project path from URL');
@@ -1114,27 +1203,6 @@ class RoboFile extends \Robo\Tasks
             $this->io()->error('Failed to create MR: ' . $e->getMessage());
             return null;
         }
-    }
-
-    /**
-     * Extract project path from repository URL
-     *
-     * @param string $url Repository URL (SSH or HTTPS)
-     * @return string|null Project path (e.g., "user/repo")
-     */
-    protected function extractProjectPath(string $url): ?string
-    {
-        // SSH format: git@gitlab.com:user/repo.git
-        if (preg_match('/^git@[^:]+:(.+?)(?:\.git)?$/', $url, $matches)) {
-            return $matches[1];
-        }
-
-        // HTTPS format: https://gitlab.com/user/repo.git
-        if (preg_match('/^https?:\/\/[^\/]+\/(.+?)(?:\.git)?$/', $url, $matches)) {
-            return $matches[1];
-        }
-
-        return null;
     }
 
     /**
