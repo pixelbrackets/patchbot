@@ -280,6 +280,31 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
+     * Clear the Patchbot cache directory
+     *
+     * @return int exit code
+     */
+    public function clearcache(): int
+    {
+        $cacheDir = $this->getCacheDirectory() . '/repositories';
+
+        if (!is_dir($cacheDir)) {
+            $this->io()->text('Cache directory does not exist: ' . $cacheDir);
+            return 0;
+        }
+
+        $this->io()->section('Clear Cache');
+        $this->io()->text('Cache directory: ' . $cacheDir);
+
+        $this->taskDeleteDir($cacheDir)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+
+        $this->io()->success('Cache cleared');
+        return 0;
+    }
+
+    /**
      * Import a patch from a URL (Gist, Git repository, or subdirectory)
      *
      * @param string $url URL of the Git repository or Gist (positional arg)
