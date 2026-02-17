@@ -1,6 +1,16 @@
 # Changelog
 
-2026-02-15 Dan Untenzu <mail@pixelbrackets.de>
+2026-02-17 Dan Kleine <mail@pixelbrackets.de>
+
+  * 3.1.0
+  * FEATURE Add cache for cloned repositories → saves traffic and time
+  * FEATURE Add import and export commands → Eg. import all patches from our examples repository
+    which contains common use cases like file renaming or adding configurations
+    `patchbot import https://github.com/pixelbrackets/patchbot-examples` 
+  * FEATURE Add interactive wizard to create command
+  * FEATURE Support multi-language patches → Now supports patches written in PHP, Shell, Python and as Git Diff
+
+2026-02-15 Dan Kleine <mail@pixelbrackets.de>
 
   * 3.0.0
   * FEATURE Rewrite docs → Remove clutter and be more concise in reason why
