@@ -163,8 +163,10 @@ Use `--dry-run` to preview what would happen without making any changes:
 
 ## 5. Apply to Many Repositories
 
-For batch operations, first create a `repositories.json` file. You can either
-write it manually or let Patchbot discover repositories from GitLab:
+For batch operations, Patchbot reads a `repositories.json` file that lists
+all target repositories. You can generate it automatically or write it by hand.
+
+### Discover repositories from GitLab
 
 ```bash
 # Set up your GitLab token in .env
@@ -175,19 +177,46 @@ cp .env.example .env
 ./vendor/bin/patchbot discover --gitlab-namespace=mygroup
 ```
 
+This generates a `repositories.json` file with the following structure:
+
+```json
+{
+  "generated": "manual",
+  "repositories": [
+    {
+      "path_with_namespace": "user/example-project",
+      "clone_url_ssh": "git@gitlab.com:user/example-project.git",
+      "clone_url_http": "https://gitlab.com/user/example-project.git",
+      "default_branch": "main",
+      "topics": []
+    }
+  ]
+}
+```
+
+The `topics` field is populated from the GitLab project topics (Settings >
+General > Topics). Repositories without topics get an empty array. You can
+add custom topics manually to categorize repositories for filtering — for
+example, add `"topics": ["php", "internal"]` to group repositories by
+language or team.
+
+### Apply patches
+
 Then apply the patch to all discovered repositories:
 
 ```bash
 ./vendor/bin/patchbot patch:many add-changelog-file
 ```
 
-Use filters to target specific repositories:
+### Filter repositories
+
+Use `--filter` to target specific repositories by path or topic:
 
 ```bash
 # Only repositories matching a path pattern
 ./vendor/bin/patchbot patch:many add-changelog-file --filter="path:mygroup/typo3-*"
 
-# Only repositories with a specific GitLab topic
+# Only repositories with a specific topic
 ./vendor/bin/patchbot patch:many add-changelog-file --filter="topic:php"
 ```
 

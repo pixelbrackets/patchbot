@@ -198,8 +198,8 @@ patched, skipped, or failed.
 
 ### Discover repositories
 
-Instead of adding repository URLs manually, let Patchbot discover them from
-a GitLab namespace (group or user):
+Instead of adding repository URLs manually to the `repositories.json` file,
+let Patchbot discover them from a GitLab namespace (group or user):
 
 ```bash
 # Set up your GitLab token in .env

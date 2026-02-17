@@ -544,16 +544,17 @@ class RoboFile extends \Robo\Tasks
     {
         // Get GitLab namespace: CLI option > env
         $namespace = !empty($options['gitlab-namespace']) ? $options['gitlab-namespace'] : getenv('GITLAB_NAMESPACE');
-        if (empty($namespace)) {
-            $this->io()->error('Missing GitLab namespace. Use --gitlab-namespace or set GITLAB_NAMESPACE in .env');
-            return 1;
-        }
-
-        // Get GitLab token from environment
         $token = getenv('GITLAB_TOKEN');
-        if (empty($token)) {
-            $this->io()->error('Missing GITLAB_TOKEN environment variable. Create a .env file with GITLAB_TOKEN=your-token');
-            return 1;
+
+        if (empty($namespace) || empty($token)) {
+            if (empty($namespace)) {
+                $this->io()->error('Missing GitLab namespace. Use --gitlab-namespace or set GITLAB_NAMESPACE in .env');
+            }
+            if (empty($token)) {
+                $this->io()->error('Missing GITLAB_TOKEN environment variable. Create a .env file with GITLAB_TOKEN=your-token');
+            }
+
+            return $this->offerRepositoriesTemplate();
         }
 
         // Get GitLab URL: CLI option > env > default
@@ -1272,6 +1273,46 @@ class RoboFile extends \Robo\Tasks
         }
 
         return $repositories;
+    }
+
+    /**
+     * Offer to create a template repositories.json when discovery is not available
+     *
+     * @return int exit code
+     */
+    protected function offerRepositoriesTemplate(): int
+    {
+        $outputFile = 'repositories.json';
+
+        if (is_file($outputFile)) {
+            return 1;
+        }
+
+        if (!$this->io()->input()->isInteractive()) {
+            return 1;
+        }
+
+        $question = $this->io()->confirm(
+            'Create a template ' . $outputFile . ' to fill in manually?',
+            true
+        );
+        if ($question === false) {
+            return 1;
+        }
+
+        $templateFile = __DIR__ . '/../resources/templates/repositories.json';
+        $this->taskFilesystemStack()
+            ->copy($templateFile, getcwd() . '/' . $outputFile)
+            ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
+            ->run();
+
+        $this->io()->success('Template created: ' . $outputFile);
+        $this->io()->text('Edit the file and add your repositories, then run:');
+        $this->io()->listing([
+            './vendor/bin/patchbot patch:many <patch-name>',
+        ]);
+
+        return 0;
     }
 
     /**
