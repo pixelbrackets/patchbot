@@ -1,5 +1,11 @@
 # Changelog
 
+2026-02-19 Dan Kleine <mail@pixelbrackets.de>
+
+  * 3.2.0
+  * FEATURE Offer standalone binary
+  * BUGFIX Add missing repo file
+
 2026-02-17 Dan Kleine <mail@pixelbrackets.de>
 
   * 3.1.0
