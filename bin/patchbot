@@ -18,8 +18,18 @@ if (!$loaded) {
     );
 }
 
-$version = \Jean85\PrettyVersions::getVersion('pixelbrackets/patchbot')->getPrettyVersion();
+// Determine version: prefer .version file (PHAR/binary builds), fallback to PrettyVersions (Composer installs)
+if (file_exists(__DIR__ . '/../.version')) {
+    $version = trim(file_get_contents(__DIR__ . '/../.version'));
+} else {
+    $version = \Jean85\PrettyVersions::getVersion('pixelbrackets/patchbot')->getPrettyVersion();
+}
 
-$runner = new \Robo\Runner(\Pixelbrackets\Patchbot\RoboFile::class);
-$statusCode = $runner->execute($argv, 'Patchbot', $version);
+try {
+    $runner = new \Robo\Runner(\Pixelbrackets\Patchbot\RoboFile::class);
+    $statusCode = $runner->execute($argv, 'Patchbot', $version);
+} catch (\Exception $e) {
+    echo 'Fatal Error: ' . $e->getMessage() . PHP_EOL;
+    $statusCode = 1;
+}
 exit($statusCode);

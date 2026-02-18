@@ -1,0 +1,6 @@
+{
+    "src": "./patchbot.phar",
+    "dest": "./build",
+    "platform": "linux",
+    "php": "8.4"
+}

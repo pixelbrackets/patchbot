@@ -38,6 +38,30 @@ you have two options:
 
 ## 2. Create a Patch Project
 
+### Using the standalone binary
+
+If you don't use PHP, download the standalone binary from
+[GitHub Releases](https://github.com/pixelbrackets/patchbot-dist/releases)
+and create a project directory manually:
+
+```bash
+# Download binary
+curl -L -o patchbot https://github.com/pixelbrackets/patchbot-dist/releases/latest/download/patchbot-linux-x64
+chmod +x patchbot
+
+# Create project structure
+mkdir -p my-patches/patches
+cd my-patches
+
+# Create your first patch
+../patchbot create "My first patch" --type=sh
+```
+
+The binary bundles the PHP runtime, so no PHP installation is needed on
+your system. Write patches in Shell, Python, or as Git diffs.
+
+### Using Composer
+
 The easiest way to get started is the
 [skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/):
 

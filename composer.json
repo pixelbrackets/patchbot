@@ -40,6 +40,9 @@
         }
     },
     "scripts": {
+        "build:binary": "./build-binary.sh",
+        "build:executables": "./build-executables.sh",
+        "build:phar": "php --define phar.readonly=0 build-phar.php",
         "test": [
             "phpunit tests/unit/"
         ]

@@ -1,6 +1,8 @@
 .env
 .idea
+/build/
 /composer.phar
 /composer.lock
 /vendor/
 /repositories.json*
+/*.phar

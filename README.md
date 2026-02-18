@@ -70,10 +70,37 @@ cd my-patches
 
 ## Requirements
 
-- PHP
 - Git
+- PHP, when installed via Composer
+
+Patchbot is written in PHP, but standalone Linux binaries are available.
+Combined with multi-language patch support (Shell, Python, Git diff),
+_you can use Patchbot without writing or running PHP_ yourself.
 
 ## Installation
+
+### Standalone binary
+
+Download the latest binary from the
+[GitHub Releases](https://github.com/pixelbrackets/patchbot-dist/releases):
+
+```bash
+# Download and make executable
+curl -L -o patchbot https://github.com/pixelbrackets/patchbot-dist/releases/latest/download/patchbot-linux-x64
+chmod +x patchbot
+
+# Run
+./patchbot list
+```
+
+A PHAR archive is also available for systems with PHP installed:
+
+```bash
+curl -L -o patchbot.phar https://github.com/pixelbrackets/patchbot-dist/releases/latest/download/patchbot.phar
+php patchbot.phar list
+```
+
+### Composer (Recommended)
 
 Use the
 [skeleton package](https://packagist.org/packages/pixelbrackets/patchbot-skeleton/)
