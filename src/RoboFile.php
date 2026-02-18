@@ -1282,7 +1282,7 @@ class RoboFile extends \Robo\Tasks
      */
     protected function offerRepositoriesTemplate(): int
     {
-        $outputFile = 'repositories.json';
+        $outputFile = getcwd() . '/repositories.json';
 
         if (is_file($outputFile)) {
             return 1;
@@ -1302,7 +1302,7 @@ class RoboFile extends \Robo\Tasks
 
         $templateFile = __DIR__ . '/../resources/templates/repositories.json';
         $this->taskFilesystemStack()
-            ->copy($templateFile, getcwd() . '/' . $outputFile)
+            ->copy($templateFile, $outputFile)
             ->setVerbosityThreshold(VerbosityThresholdInterface::VERBOSITY_DEBUG)
             ->run();
 

@@ -1,0 +1,12 @@
+{
+  "generated": "manual",
+  "repositories": [
+    {
+      "path_with_namespace": "user/example-project",
+      "clone_url_ssh": "git@gitlab.com:user/example-project.git",
+      "clone_url_http": "https://gitlab.com/user/example-project.git",
+      "default_branch": "main",
+      "topics": []
+    }
+  ]
+}

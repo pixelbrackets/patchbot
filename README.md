@@ -44,6 +44,7 @@ to see how Patchbot helps reduce technical debt across Git repositories.
 - Repository filtering - Target specific repos by path pattern or GitLab topic (`--filter`)
 - Dry-run mode - Preview what would happen without making changes (`--dry-run`)
 - Custom git user - Push as a bot user instead of your personal account
+- Import and export - Quickly import patches from GitHub Gists or Git repositories
 - Multi-language patches - Write patch scripts in PHP, Shell, Python, or as Git diffs
 - CI-ready - Run Patchbot as a scheduled GitLab CI pipeline
 
@@ -88,9 +89,11 @@ Or install Patchbot as a dependency in an existing project:
 composer require pixelbrackets/patchbot
 ```
 
+### Access rights
+
 The user running Patchbot needs clone and push access to the target repositories.
 SSH is the recommended protocol. See the
-[walkthrough guide](docs/walkthrough.md#access-rights)
+[walkthrough guide](docs/walkthrough.md#1-set-up-access)
 for details on configuring access.
 
 ## Usage
@@ -217,7 +220,8 @@ cp .env.example .env
 ```
 
 This creates a `repositories.json` file with all discovered repositories,
-including their clone URLs and default branches.
+including their clone URLs and default branches. When you don't have GitLab
+it will create a template file for you instead.
 
 ### Merge feature branches
 
