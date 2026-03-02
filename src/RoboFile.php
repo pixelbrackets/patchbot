@@ -1038,8 +1038,8 @@ class RoboFile extends \Robo\Tasks
      */
     protected function parseRepositoryUrl(string $url): array
     {
-        // SSH format: git@example.com:user/repo.git
-        if (preg_match('/^git@([^:]+):(.+?)(?:\.git)?$/', $url, $matches)) {
+        // SSH format: git@example.com:user/repo.git or ssh://git@example.com:5522/user/repo.git
+        if (preg_match('/^(?:ssh:\/\/)?git@([^:]+):(?:\d+\/)?(.+?)(?:\.git)?$/', $url, $matches)) {
             return ['hostname' => $matches[1], 'path' => $matches[2]];
         }
 

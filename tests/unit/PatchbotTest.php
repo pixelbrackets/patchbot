@@ -63,6 +63,8 @@ class PatchbotTest extends TestCase
         return [
             'SSH' => ['git@gitlab.com:user/repo.git', 'gitlab.com', 'user/repo'],
             'SSH without .git' => ['git@gitlab.com:user/repo', 'gitlab.com', 'user/repo'],
+            'SSH with protocol' => ['ssh://git@gitlab.com:user/repo.git', 'gitlab.com', 'user/repo'],
+            'SSH with port' => ['ssh://git@gitlab.com:5522/user/repo.git', 'gitlab.com', 'user/repo'],
             'HTTPS' => ['https://gitlab.com/user/repo.git', 'gitlab.com', 'user/repo'],
             'HTTPS without .git' => ['https://gitlab.com/user/repo', 'gitlab.com', 'user/repo'],
             'GitHub SSH' => ['git@github.com:user/repo.git', 'github.com', 'user/repo'],
