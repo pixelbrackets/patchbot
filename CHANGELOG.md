@@ -1,5 +1,10 @@
 # Changelog
 
+2026-03-12 Dan Kleine <mail@pixelbrackets.de>
+
+  * 3.2.1
+  * BUGFIX Parse repository urls with ssh and port as well
+
 2026-02-19 Dan Kleine <mail@pixelbrackets.de>
 
   * 3.2.0
